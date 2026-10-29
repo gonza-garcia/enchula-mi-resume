@@ -1,4 +1,4 @@
-# Enchulame el Resume
+# Enchula mi Resume
 
 Contexto único del proyecto: el producto de CV, gestor de ofertas y preparación de
 entrevistas, y la instancia de uso personal que lo alimenta. Este archivo es glosario de

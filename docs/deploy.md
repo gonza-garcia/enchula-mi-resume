@@ -5,7 +5,7 @@ estático sirve. El camino probado es Cloudflare Pages; Vercel, Netlify o GitHub
 funcionan igual porque no hay server que mantener.
 
 **Lo que se publica es el producto genérico, nunca los datos del usuario.** El deploy
-sale del repo público (`gonza-garcia/enchulame-el-resume`), que solo tiene contenido demo
+sale del repo público (`gonza-garcia/enchula-mi-resume`), que solo tiene contenido demo
 ficticio. La instancia con datos reales es privada y su build personal no se publica.
 
 ## Build

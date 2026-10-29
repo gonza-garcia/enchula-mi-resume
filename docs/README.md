@@ -1,4 +1,4 @@
-# Enchulame el Resume
+# Enchula mi Resume
 
 Producto de CV e interview prep: un sitio Astro estático, bilingüe, ATS friendly, con gestor
 de ofertas, banco de preguntas y plan de estudios navegable. Cualquier usuario clona el repo,
@@ -509,7 +509,7 @@ contexto y no contradecir las decisiones vigentes de este README.
 - 28 oct 2026: se cierra la **cola de la salida al repo público**. (1) Metadata del repo en
   GitHub: description genérica ("Enchula mi Resume — CV e interview prep en un sitio Astro
   estático, bilingüe ES/EN y ATS friendly…"), 10 topics y homepage apuntando a la demo.
-  (2) **Deploy de la demo en Cloudflare Pages**: proyecto `enchulame-el-resume` conectado al
+  (2) **Deploy de la demo en Cloudflare Pages**: proyecto `enchula-mi-resume` conectado al
   repo público por integración git (auto-deploy en push a `main`), build `pnpm run build`,
   output `dist/`, `NODE_VERSION=24`. La demo queda en `https://enchulame-el-resume.pages.dev`
   respondiendo 200 en sus cuatro rutas con el banner "Datos de ejemplo, no son datos reales"
