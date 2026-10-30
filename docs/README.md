@@ -511,7 +511,7 @@ contexto y no contradecir las decisiones vigentes de este README.
   estático, bilingüe ES/EN y ATS friendly…"), 10 topics y homepage apuntando a la demo.
   (2) **Deploy de la demo en Cloudflare Pages**: proyecto `enchula-mi-resume` conectado al
   repo público por integración git (auto-deploy en push a `main`), build `pnpm run build`,
-  output `dist/`, `NODE_VERSION=24`. La demo queda en `https://enchulame-el-resume.pages.dev`
+  output `dist/`, `NODE_VERSION=24`. La demo queda en `https://enchula-mi-resume.pages.dev`
   respondiendo 200 en sus cuatro rutas con el banner "Datos de ejemplo, no son datos reales"
   y auditoría de identidad sobre el HTML publicado en 0. Sin cambios de archivos de producto
   (solo metadata y hosting): sin suite, sin re-sync al staging y sin resync con el agente de
