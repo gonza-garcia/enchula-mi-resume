@@ -9,6 +9,9 @@ salario: N/A
 recruiter: N/A
 demo: true
 perfiles: frontend, ai
+fuente: demo-curated-sheet
+barrido: 2026-10-05-demo
+id_vacante: demo-nimbus-001
 ---
 
 # Oferta original

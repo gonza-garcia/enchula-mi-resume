@@ -1,0 +1,17 @@
+{
+  "id": "demo-job-board",
+  "nombre": "Demo Job Board",
+  "tipo": "job-board",
+  "url": "https://example.com/jobs",
+  "activa": true,
+  "demo": true,
+  "playbook": {
+    "buscar": "https://example.com/jobs?q=frontend&location=remote, revisando las primeras 3 paginas del feed.",
+    "herramientas": ["fetch directo del feed JSON", "Jina Reader si el HTML no trae el cuerpo"],
+    "quirks": [
+      "El board renderiza con JS: usar el feed JSON, no el HTML.",
+      "Los avisos viejos siguen publicados: chequear la fecha antes de invertir tiempo."
+    ]
+  },
+  "notas": "Fuente ficticia de demostracion del producto generico."
+}

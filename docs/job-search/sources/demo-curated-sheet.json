@@ -1,0 +1,17 @@
+{
+  "id": "demo-curated-sheet",
+  "nombre": "Demo Curated Spreadsheet",
+  "tipo": "spreadsheet",
+  "url": "https://example.com/sheet",
+  "activa": true,
+  "demo": true,
+  "playbook": {
+    "buscar": "Export CSV del sheet publico, filtrando por keywords de rol (frontend) y ubicacion (remoto).",
+    "herramientas": ["export CSV del sheet", "fetch de la pagina de careers de cada empresa"],
+    "quirks": [
+      "Es un snapshot estatico que no se actualiza solo.",
+      "Algunos leads son founding/equity sin salario: se vetan por criterio propio."
+    ]
+  },
+  "notas": "Fuente ficticia de demostracion del producto generico."
+}

@@ -42,8 +42,15 @@ forma parte del producto.
   que hay en disco y sus flujos de creación usan el puente de prompts con las skills del
   repo (ADR-0023).
 - Las skills del flujo viven en `skills/job-seeking/`: `build-profile`, `capture-job-offer`,
-  `adapt-resume-to-offer`, `research-content`, `content-designer`, `capture-learning-plan`
-  y `build-interview-review-plan`.
+  `adapt-resume-to-offer`, `research-content`, `content-designer`, `capture-learning-plan`,
+  `build-interview-review-plan` y `register-sweep`.
+- El pipeline de búsqueda tiene su contrato (ADR-0043): fuentes de cualquier tipo con su
+  playbook de extracción (`docs/job-search/sources/`), barridos registrados con ids
+  estables por vacante, estados y descartes con motivo (`docs/job-search/sweeps/`) y la
+  página `/fuentes` mostrando el catálogo, su historial de ofertas y sus stats. Las
+  ofertas capturadas se vinculan a su fuente y barrido por `fuente`/`barrido`/`id_vacante`
+  en el frontmatter de `offer.md`. Los datos reales del pipeline son del usuario y nunca
+  viajan al repo público.
 - Cada oferta puede llevar un plan de repaso (`interview-review-plan.json`, ADR-0035) que
   `build-interview-review-plan` genera cruzando los "Temas a repasar" del match-report
   contra el banco. La tab "CVs adaptados" ofrece "Cargar repaso" por oferta (navega a
@@ -524,3 +531,77 @@ contexto y no contradecir las decisiones vigentes de este README.
   dos variantes de slash** (barra invertida y barra normal, incluidas las rutas del perfil de
   usuario). Corregido en
   los dos árboles y publicado con commit nuevo encima, sin reescribir historia.
+- 28 oct 2026 (sesión operativa): mantenimiento del pipeline de búsqueda de empleo —
+  barrido periódico de fuentes con la capa de vetos del flujo unificado, registro de
+  outcomes en el tracker, una postulación nueva corriendo el flujo unificado de punta a
+  punta (captura, análisis, CV adaptado validado, cover aprobada por la persona usuaria,
+  documentos con QA y envío con Submit de la persona usuaria), y cierre del ajuste de la
+  skill de una fuente de ofertas al dominio nuevo del tablero (verificado en vivo, suite de
+  la skill en verde). Sin cambios de producto: sin suite del producto, sin re-sync al
+  staging y sin resync con el agente de evidencias.
+- 29 oct 2026: **rename del proyecto: "Enchulame el Resume" → "Enchula mi Resume"**
+  (`enchulame-el-resume` → `enchula-mi-resume`). Ejecución por capas: (1) referencias
+  textuales en ~50 archivos de 8 árboles (instancia, staging, legacy, job-search-tools,
+  workspace root, memento, ai-job-search, career-ops); (2) rename de los 3 repos de GitHub
+  (`-planning` incluido) con redirect automático y remotes locales actualizados;
+  (3) rename de las 4 carpetas del workspace + paths hardcodeados en `sync-staging.mjs`,
+  `final-register.py` y `validate-adapted.ts`; (4) rename de los 2 proyectos Cloudflare
+  Pages (display name; las URLs `*.pages.dev` NO cambian según el diálogo de Cloudflare).
+  ADRs y registros históricos sin tocar (sin reescribir historia). La raíz del workspace
+  queda pendiente (sesión propia). Verificación: `check && build && test` en verde (302
+  tests) tras cada capa. 6 commits atómicos en la instancia, 1 en staging, 1 en legacy,
+  1 en memento y 1 en ai-job-search.
+- 30 oct 2026 (sesión operativa): **rename de la raíz del workspace intentado y pospuesto**.
+  `J:\.webdev\.projects\enchulame-el-resume` → `enchula-mi-resume` no se puede hacer en
+  caliente: los procesos del propio tooling de la sesión (`opencode.exe` y los MCP servers y
+  wrappers hijos) nacieron con esa carpeta como directorio de trabajo y Windows rechaza el
+  rename ("recurso ocupado"; verificado con Sysinternals Handle: 13 handles en 11 procesos).
+  `session_move` no libera esos handles. Decisión de la persona usuaria: reiniciar la compu y
+  renombrar la carpeta a mano antes de abrir T3 Code; la sesión que continúe cierra la capa
+  (paths de `sync-staging.mjs`, `final-register.py` y `validate-adapted.ts`, `session_move` a
+  la raíz nueva, suite en verde y cierre del pendiente — todo escrito en "Pendientes con
+  gatillo" del roadmap). Pendiente nuevo: actualizar `J:\.webdev\.hosting\INVENTARIO.md`
+  (nombres de repo, URLs `*.pages.dev` y paths locales viejos del rename del 29-oct). Sin
+  cambios de producto: sin suite, sin re-sync al staging y sin resync con el agente de
+  evidencias.
+- 30 oct 2026 (sesión de cierre del rename): **última capa del rename cerrada: la raíz del
+  workspace**. La persona usuaria renombró la carpeta a mano tras el reinicio
+  (`J:\.webdev\.projects\enchulame-el-resume` → `enchula-mi-resume`); esta sesión corrió ya
+  sobre la raíz nueva (sin `session_move`), actualizó los 3 paths hardcodeados restantes
+  (`sync-staging.mjs` ROOT, `final-register.py` BASE + el path de la plantilla de
+  `application.md`, `validate-adapted.ts` import; gate grep de `enchulame-el-resume` = 0 en
+  los 3 scripts) y cerró con `check && build && test` en verde (302 tests). **Corrección de
+  realidad**: el rename de los proyectos Cloudflare Pages del 29-oct **sí** cambió las URLs
+  `*.pages.dev` (el diálogo de CF decía lo contrario): las URLs viejas
+  `enchulame-el-resume*.pages.dev` dejan de resolver y las nuevas
+  `enchula-mi-resume*.pages.dev` responden 200 (verificado 30 oct) — la entrada del 29-oct
+  queda como registro de lo anotado entonces. `J:\.webdev\.hosting\INVENTARIO.md` actualizado
+  (nombres de repo, URLs verificadas y paths locales). Pendientes del rename de la raíz y de
+  actualización del INVENTARIO cerrados en el roadmap. Sin cambios de producto: sin re-sync al
+  staging y sin resync con el agente de evidencias.
+- 31 oct 2026: **la deuda de commits queda en cero**. Todo el WIP sin commitear de las
+  sesiones de octubre (contenido de interview, base shadcn/tailwind, modal de cover letter,
+  plan de repaso, ADRs 0032-0038, perfil, ofertas reales 2026-10-08→10-19, reformatting de
+  `adapted-resume.json`, skills del flujo, preparación del repo público, herramientas de
+  planning, los hunks mixtos de 6 archivos y el helper `file-name.ts` sin trackear) se
+  commiteó en la instancia en **14 commits atómicos por área** tras revisión hunk por hunk
+  (los archivos mixtos por etapas, sin tocar el working tree; los riders de hunks
+  inseparables van con disclosure en el mensaje). Working tree byte-idéntico al inicio
+  (hashes verificados) y verificación en verde: 302 tests. Sin cambios de superficie de
+  producto: sin re-sync al staging (esta entrada viaja en el próximo sync) y sin resync con
+  el agente de evidencias.
+- 1 nov 2026: **consolidación de los datos reales del legacy** (Cambio 4 de la Fase F):
+  las carpetas de ofertas que vivían solo en el árbol legacy pasan a la instancia privada,
+  con merge de los registros de postulación más nuevos, backfill de los registros faltantes
+  (vetos y descartes con su motivo) y normalización al contrato ADR-0042 de los estados
+  fuera del enum. Solo vive en la instancia: los datos reales nunca viajan al staging ni al
+  repo público. Verificación en verde: 319 tests (el spec parametrizado de ofertas reales
+  crece con las carpetas). Sin cambios de superficie de producto: sin re-sync al staging y
+  sin resync con el agente de evidencias.
+- 1 nov 2026: **Fase G arranca con su diseño aprobado y su contrato** (ADR-0043): fuentes
+  de búsqueda de cualquier tipo con su playbook de extracción (cómo buscar, herramientas,
+  quirks) y barridos registrados con ids estables por vacante, estados, descartes con
+  motivo y particularidades que mejoran el playbook. Schemas Zod, read model, contenido
+  demo y specs (11 tests). Aditivo: `offer.md` acepta `fuente`/`barrido`/`id_vacante`
+  opcionales. Verificación en verde: 330 tests. El sync al staging se hace al cierre de la
+  fase con su auditoría de rigor.

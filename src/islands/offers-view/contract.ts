@@ -1,8 +1,9 @@
 import type { Resume } from '../../schemas/resume';
 import type { Application, ApplicationState } from '../../schemas/application';
+import type { Sweep } from '../../schemas/sweep';
 import type { OfferState } from '../../lib/job-offers';
 
-export type { Application, ApplicationState, OfferState };
+export type { Application, ApplicationState, OfferState, Sweep };
 
 /**
  * Fila de la vista "Ofertas" (Fase F, variante D): la data de la carpeta de la
@@ -21,6 +22,10 @@ export interface OfferRow {
   recruiter: string | null;
   /** Posicionamientos (perfiles) declarados en offer.md (`perfiles: frontend, ai`). */
   perfiles: string[];
+  /** Vinculo con el pipeline de busqueda (Fase G): fuente, barrido e id de vacante. */
+  fuente: string | null;
+  barrido: string | null;
+  idVacante: string | null;
   /** Estado derivado del disco: agregada | analizada | adaptada. */
   estado: OfferState;
   matchScore: number | null;
@@ -43,9 +48,17 @@ export interface ProfilePositioning {
   title: string;
 }
 
+/** Fuente de busqueda, proyectada para el filtro del sidebar (Fase G). */
+export interface SourceRef {
+  id: string;
+  nombre: string;
+}
+
 export interface OffersViewProps {
   rows: OfferRow[];
   positionings: ProfilePositioning[];
+  /** Fuentes configuradas, para rotular el filtro por fuente. */
+  sources: SourceRef[];
 }
 
 /** Estados de la barra lateral de "Estado" (ademas de los del contrato). */

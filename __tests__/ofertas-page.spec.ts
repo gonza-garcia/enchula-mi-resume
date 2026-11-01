@@ -187,6 +187,35 @@ test.describe('Ofertas: variante D como producto', () => {
     await expect(sidebarItem(page, 'Frontend Developer')).toHaveAttribute('aria-pressed', 'true');
   });
 
+  test('filtro Fuente: acota por la fuente de captura (Fase G)', async ({ page }) => {
+    await gotoOfertas(page);
+    await sidebarItem(page, 'Demo Job Board').click();
+    await expect(page.locator('.of-card')).toHaveCount(1);
+    await expect(page.locator('.of-card')).toContainText('Aurora Labs');
+    await sidebarItem(page, 'Demo Job Board').click();
+    await expect(page.locator('.of-card')).toHaveCount(2);
+
+    await sidebarItem(page, 'Demo Curated Spreadsheet').click();
+    await expect(page.locator('.of-card')).toHaveCount(1);
+    await expect(page.locator('.of-card')).toContainText('Nimbus Software');
+  });
+
+  test('seccion Barridos: historial con numeros, detalle de vacantes y particularidades', async ({
+    page
+  }) => {
+    await gotoOfertas(page);
+    const sweeps = page.locator('.of-sweeps');
+    await expect(sweeps.locator('> summary')).toContainText('Barridos');
+    await expect(sweeps.locator('> summary')).toContainText('1 registrado - ultimo 2026-10-05');
+    await sweeps.locator('> summary').click();
+    await expect(sweeps.locator('.of-sweep')).toHaveCount(1);
+    await expect(sweeps).toContainText('descartadas: 1');
+    await expect(sweeps).toContainText('Ficticia Corp - Staff Frontend Engineer');
+    await expect(sweeps).toContainText('Nivel Staff sin experiencia suficiente');
+    await sweeps.locator('.of-sweep-notes > summary').click();
+    await expect(sweeps.locator('.of-sweep-notes')).toContainText('feed JSON del board demora');
+  });
+
   test('filtro Top matches (>= 80) deja solo el score alto', async ({ page }) => {
     await gotoOfertas(page);
     await sidebarItem(page, 'Top matches').click();

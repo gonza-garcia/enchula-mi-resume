@@ -13,11 +13,16 @@ import Layout from '../layouts/Layout.astro';
 import SiteNav from '../components/SiteNav.astro';
 import OffersView from '../islands/offers-view/OffersView';
 import { listOffers, readOfferDetail, stripFrontmatter } from '../lib/job-offers';
+import { listSources, listSweeps } from '../lib/job-search';
 import { loadProfile, nameInitials } from '../lib/profile';
 import { resumeSchema } from '../schemas/resume';
 import type { OfferRow } from '../islands/offers-view/contract';
 
 const { profile } = loadProfile();
+
+const sources = listSources();
+const sweeps = listSweeps();
+const sourceName = (id: string) => sources.find((source) => source.id === id)?.nombre ?? id;
 
 const rows: OfferRow[] = listOffers().map((listing) => {
   const detail = readOfferDetail(listing.slug);
@@ -39,6 +44,9 @@ const rows: OfferRow[] = listOffers().map((listing) => {
     salario: listing.meta.salario,
     recruiter: listing.meta.recruiter,
     perfiles: listing.meta.perfiles,
+    fuente: listing.meta.fuente,
+    barrido: listing.meta.barrido,
+    idVacante: listing.meta.idVacante,
     estado: listing.estado,
     matchScore: listing.matchScore,
     hasReviewPlan: listing.hasReviewPlan,
@@ -74,9 +82,122 @@ const positionings = profile.positionings.map((positioning) => ({
     <div class="spacer"></div>
   </div>
 
-  <OffersView client:load rows={rows} positionings={positionings} />
+  {/* Barridos (Fase G): historial del pipeline de busqueda. Colapsado por
+      defecto: el detalle vive aca y las ofertas capturadas en su tab. */}
+  {sweeps.length > 0 && (
+    <details class="of-sweeps">
+      <summary>
+        Barridos
+        <span class="muted tiny">
+          {sweeps.length} registrado{sweeps.length === 1 ? '' : 's'} - ultimo {sweeps[0].fecha}
+        </span>
+      </summary>
+      <div class="of-sweeps-body">
+        {sweeps.map((sweep) => (
+          <article class="of-sweep">
+            <header class="of-sweep-head">
+              <strong>{sweep.fecha}</strong>
+              <span class="muted tiny">{sweep.id}</span>
+              <span class="of-row tight">
+                {sweep.fuentes.map((entry) => (
+                  <span class="chip">{sourceName(entry.sourceId)}</span>
+                ))}
+              </span>
+            </header>
+            <p class="of-row tight">
+              <span class="chip">nuevas: {sweep.vacantes.filter((v) => v.estado === 'nueva').length}</span>
+              <span class="chip">capturadas: {sweep.capturadas.length}</span>
+              <span class="chip">
+                ya postuladas: {sweep.vacantes.filter((v) => v.estado === 'ya postulada').length}
+              </span>
+              <span class="chip">
+                descartadas: {sweep.vacantes.filter((v) => v.estado === 'descartada').length}
+              </span>
+            </p>
+            <ul class="of-sweep-vacantes">
+              {sweep.vacantes.map((vacante) => (
+                <li>
+                  <span class={`of-badge ${
+                    vacante.estado === 'descartada'
+                      ? 'of-badge-descartada'
+                      : vacante.estado === 'ya postulada'
+                        ? 'of-badge-enviada'
+                        : vacante.estado === 'capturada'
+                          ? 'of-badge-confirmada'
+                          : 'of-badge-borrador'
+                  }`}>{vacante.estado}</span>
+                  {vacante.empresa ? `${vacante.empresa} - ` : ''}
+                  {vacante.titulo}
+                  {vacante.motivo && <span class="muted"> — {vacante.motivo}</span>}
+                </li>
+              ))}
+            </ul>
+            {sweep.particularidades.length > 0 && (
+              <details class="of-sweep-notes">
+                <summary>Particularidades del proceso</summary>
+                <ul>
+                  {sweep.particularidades.map((nota) => (
+                    <li>{nota}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </article>
+        ))}
+      </div>
+    </details>
+  )}
+
+  <OffersView
+    client:load
+    rows={rows}
+    positionings={positionings}
+    sources={sources.map((source) => ({ id: source.id, nombre: source.nombre }))}
+  />
 
   <style is:global>
+    /* ===== Barridos (Fase G): historial del pipeline de busqueda ===== */
+    .of-sweeps {
+      max-width: 1100px;
+      margin: 0 auto 16px;
+      border: 1px solid var(--border, #d9d9d9);
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
+    .of-sweeps > summary {
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+    }
+    .of-sweep {
+      border-top: 1px solid var(--border, #d9d9d9);
+      padding: 10px 0;
+    }
+    .of-sweep-head {
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+      flex-wrap: wrap;
+    }
+    .of-sweep-vacantes {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      font-size: 12px;
+    }
+    .of-sweep-vacantes li {
+      margin: 3px 0;
+    }
+    .of-sweep-notes {
+      margin-top: 8px;
+      font-size: 12px;
+    }
+    .of-sweep-notes > summary {
+      cursor: pointer;
+    }
+
     /* ===== Vista "Ofertas" (Fase F, variante D) =====
        Reglas de UI: pills solo para etiquetas (chips/badges), rectangulos para
        acciones (boton base + primario/secundario/ghost), segmented para las

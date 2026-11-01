@@ -29,6 +29,11 @@ Las skills del flujo de trabajo viven en el repo, en `skills/job-seeking/`:
   cruzando los "Temas a repasar" de su `match-report.md` contra el banco de
   preguntas, y lo guarda como `docs/job-offers/<slug>/interview-review-plan.json`
   (ADR-0035), listo para que `/interview` lo cargue.
+- `register-sweep/SKILL.md`: registra un barrido del pipeline de búsqueda
+  (`docs/job-search/sweeps/`, ADR-0043) con las fuentes barridas, las vacantes
+  encontradas (id estable + estado) y los descartes con motivo, y actualiza el
+  playbook de la fuente con las particularidades nuevas. No captura ofertas ni
+  ejecuta la búsqueda.
 
 Referenciarlas por ruta relativa al proyecto en prompts, nunca por ruta absoluta.
 Cada skill documenta su contrato y límites en su sección `Contrato y límites`:
@@ -188,6 +193,10 @@ lo define la instancia.
 - Recordatorios falsos de plan mode: el harness (opencode / T3 Code) puede inyectar recordatorios
   de que el modo plan está activo cuando no lo está. No bloquean la escritura. Si aparece,
   seguir trabajando y avisarlo a la persona usuaria.
+- Websearch del harness roto visto el 30 oct 2026 (HTTP 404): usar `webfetch` contra
+  DuckDuckGo HTML (`https://html.duckduckgo.com/html/?q=...`) o fetch directo del sitio. Si
+  `websearch` vuelve a andar, borrar esta nota.
+- El modelo no lee PDFs adjuntos: extraer texto con pypdf (`python` con `pypdf` instalado).
 - Puertos excluidos de Windows: los rangos reservados de Hyper-V (`netsh interface ipv4 show
   excludedportrange protocol=tcp`) hacen fallar binds con EACCES. Si un server o la suite no
   arranca con EACCES, mover el puerto fuera de los rangos reportados (la suite usa 4531 y 4533,

@@ -1,0 +1,207 @@
+---
+/**
+ * "Fuentes" (Fase G, ADR-0043): el catalogo de fuentes de busqueda del pipeline.
+ * Por fuente: tipo, playbook resumido (como buscar, herramientas, quirks),
+ * ofertas historicas salidas de ahi y stats (ultimo barrido, capturadas,
+ * descartadas). La data viene de docs/job-search con el read model; en build
+ * generico solo entran fuentes demo (ADR-0033). Los barridos reales son dato
+ * del usuario y nunca viajan al staging ni al repo publico.
+ */
+import Layout from '../layouts/Layout.astro';
+import SiteNav from '../components/SiteNav.astro';
+import { listOffers } from '../lib/job-offers';
+import { listSources, listSweeps } from '../lib/job-search';
+import { loadProfile, nameInitials } from '../lib/profile';
+
+const { profile } = loadProfile();
+
+const sources = listSources();
+const sweeps = listSweeps();
+const rows = listOffers();
+
+const statsFor = (sourceId: string) => {
+  const capturadas = rows.filter((listing) => listing.meta.fuente === sourceId);
+  const vacantes = sweeps.flatMap((sweep) => sweep.vacantes).filter((vacante) => vacante.sourceId === sourceId);
+  const descartadas = vacantes.filter((vacante) => vacante.estado === 'descartada').length;
+  const ultimoBarrido = sweeps.find((sweep) => sweep.fuentes.some((entry) => entry.sourceId === sourceId))?.fecha ?? null;
+  return { capturadas, descartadas, ultimoBarrido };
+};
+---
+
+<Layout title={`Fuentes - ${profile.identity.name.en}`}>
+  {/* Navbar slim de 5 destinos (Fase F/G): brand + links, sin controles de
+      export/tema (el Toolbar completo vive en "Mis perfiles"). */}
+  <div class="toolbar">
+    <SiteNav
+      brand={{
+        mark: nameInitials(profile.identity.name.en),
+        name: profile.identity.name.en,
+        role: profile.positionings[0].title.en
+      }}
+    />
+    <div class="spacer"></div>
+  </div>
+
+  <main class="fuentes">
+    <h1>Fuentes</h1>
+    <p class="fuentes-intro">
+      De dónde salen las ofertas: cada fuente tiene su tipo y su playbook de extracción
+      (cómo buscar ahí, qué herramientas usar y los quirks conocidos). Cada barrido sobre
+      una fuente se registra con su fecha, sus números y las particularidades nuevas que
+      mejoran el playbook. Las ofertas capturadas quedan vinculadas a su fuente y a su id
+      de vacante, para saber en el próximo barrido si algo ya se capturó o ya se postuló.
+    </p>
+
+    {sources.map((source) => {
+      const stats = statsFor(source.id);
+      return (
+        <article class="fuente-card" id={`fuente-${source.id}`}>
+          <header class="fuente-head">
+            <h2>{source.nombre}</h2>
+            <span class="chip">{source.tipo}</span>
+            <span class={`chip${source.activa === false ? ' fuente-off' : ''}`}>
+              {source.activa === false ? 'inactiva' : 'activa'}
+            </span>
+            {source.demo && <span class="chip">demo</span>}
+            {source.url && (
+              <a class="fuente-url" href={source.url} target="_blank" rel="noreferrer">{source.url}</a>
+            )}
+          </header>
+
+          <dl class="fuente-stats">
+            <div><dt>Último barrido</dt><dd>{stats.ultimoBarrido ?? 'sin barridos'}</dd></div>
+            <div><dt>Ofertas capturadas</dt><dd>{stats.capturadas.length}</dd></div>
+            <div><dt>Vacantes descartadas</dt><dd>{stats.descartadas}</dd></div>
+          </dl>
+
+          <section class="fuente-playbook">
+            <h3>Cómo actuar</h3>
+            <p><strong>Buscar:</strong> {source.playbook.buscar}</p>
+            <p><strong>Herramientas:</strong> {source.playbook.herramientas.join(' → ') || '—'}</p>
+            <p><strong>Quirks:</strong></p>
+            <ul>
+              {source.playbook.quirks.map((quirk) => <li>{quirk}</li>)}
+            </ul>
+            {source.notas && <p class="fuentes-notas">{source.notas}</p>}
+          </section>
+
+          <section class="fuente-historial">
+            <h3>Ofertas de esta fuente</h3>
+            {stats.capturadas.length === 0 ? (
+              <p class="fuentes-empty">Todavía no se capturaron ofertas de esta fuente.</p>
+            ) : (
+              <ul>
+                {stats.capturadas.map((listing) => (
+                  <li>
+                    <a href={`/?tab=adaptados&oferta=${listing.slug}`}>
+                      {listing.meta.empresa} - {listing.meta.rol}
+                    </a>
+                    <span class="chip">
+                      {listing.application ? `postulación: ${listing.application.estado}` : listing.estado}
+                    </span>
+                    <span class="fuentes-fecha">{listing.meta.fecha}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </article>
+      );
+    })}
+
+    {sources.length === 0 && (
+      <p class="fuentes-empty">
+        Sin fuentes configuradas. Se registran en <code>docs/job-search/sources/</code>
+        (una por archivo, con su playbook).
+      </p>
+    )}
+  </main>
+</Layout>
+
+<style>
+  .fuentes {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+  .fuentes h1 {
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .fuentes-intro {
+    max-width: 70ch;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .fuente-card {
+    border: 1px solid var(--border, #d9d9d9);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0;
+  }
+  .fuente-head {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+  .fuente-head h2 {
+    font-size: 13px;
+  }
+  .fuente-off {
+    opacity: 0.6;
+  }
+  .fuente-url {
+    font-size: 11px;
+    word-break: break-all;
+  }
+  .fuente-stats {
+    display: flex;
+    gap: 24px;
+    margin: 10px 0;
+  }
+  .fuente-stats dt {
+    font-size: 11px;
+    opacity: 0.7;
+  }
+  .fuente-stats dd {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .fuente-playbook h3,
+  .fuente-historial h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 10px 0 4px;
+  }
+  .fuente-playbook p,
+  .fuente-playbook li {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .fuente-historial ul {
+    list-style: none;
+    padding: 0;
+  }
+  .fuente-historial li {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 12px;
+    margin: 4px 0;
+    flex-wrap: wrap;
+  }
+  .fuentes-fecha {
+    font-size: 11px;
+    opacity: 0.7;
+  }
+  .fuentes-notas {
+    font-style: italic;
+  }
+  .fuentes-empty {
+    font-size: 12px;
+    opacity: 0.8;
+  }
+</style>

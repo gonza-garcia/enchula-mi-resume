@@ -20,6 +20,16 @@ export interface OfferMeta {
    * perfil y solo aparece en "Todas".
    */
   perfiles: string[];
+  /**
+   * Vinculo con el pipeline de busqueda (Fase G, ADR-0043): id de la fuente de
+   * la que salio la oferta (`fuente`), id del barrido que la capturo (`barrido`)
+   * e id estable de la vacante (`id_vacante`, job id externo o hash de la URL)
+   * para deduplicar contra barridos futuros. Opcionales: las ofertas sin
+   * vinculo siguen funcionando igual.
+   */
+  fuente: string | null;
+  barrido: string | null;
+  idVacante: string | null;
 }
 
 export interface OfferListing {
@@ -136,7 +146,10 @@ function metaFromOfferMd(slug: string, raw: string): OfferMeta {
     location: fm.location || null,
     salario: fm.salario && fm.salario !== 'N/A' ? fm.salario : null,
     recruiter: fm.recruiter && fm.recruiter !== 'N/A' ? fm.recruiter : null,
-    perfiles: parsePerfilesField(fm.perfiles)
+    perfiles: parsePerfilesField(fm.perfiles),
+    fuente: cleanFrontmatterValue(fm.fuente),
+    barrido: cleanFrontmatterValue(fm.barrido),
+    idVacante: cleanFrontmatterValue(fm.id_vacante)
   };
 }
 

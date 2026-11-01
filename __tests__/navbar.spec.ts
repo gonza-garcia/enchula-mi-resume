@@ -3,18 +3,19 @@ import { test, expect } from '@playwright/test';
 const DESTINATIONS = [
   { label: 'Mis perfiles', href: '/' },
   { label: 'Ofertas', href: '/ofertas/' },
+  { label: 'Fuentes', href: '/fuentes/' },
   { label: 'Prep entrevistas', href: '/interview/' },
   { label: 'Plan de estudios', href: '/learning/' }
 ];
 
-const PAGES = ['/', '/?tab=adaptados', '/ofertas/', '/interview/', '/learning/'];
+const PAGES = ['/', '/?tab=adaptados', '/ofertas/', '/fuentes/', '/interview/', '/learning/'];
 
-test.describe('Navbar consistente (4 destinos)', () => {
+test.describe('Navbar consistente (5 destinos)', () => {
   for (const path of PAGES) {
-    test(`muestra los 4 destinos y el brand en ${path}`, async ({ page }) => {
+    test(`muestra los 5 destinos y el brand en ${path}`, async ({ page }) => {
       await page.goto(path);
       const links = page.locator('nav.site-nav .site-nav-link');
-      await expect(links).toHaveCount(4);
+      await expect(links).toHaveCount(5);
       for (const destino of DESTINATIONS) {
         await expect(
           page.locator('nav.site-nav .site-nav-link', { hasText: destino.label })
@@ -29,6 +30,7 @@ test.describe('Navbar consistente (4 destinos)', () => {
       ['/', 'Mis perfiles'],
       ['/?tab=adaptados', 'Mis perfiles'],
       ['/ofertas/', 'Ofertas'],
+      ['/fuentes/', 'Fuentes'],
       ['/interview/', 'Prep entrevistas'],
       ['/learning/', 'Plan de estudios']
     ];

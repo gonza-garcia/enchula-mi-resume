@@ -1,0 +1,53 @@
+{
+  "id": "2026-10-05-demo",
+  "fecha": "2026-10-05",
+  "demo": true,
+  "fuentes": [
+    {
+      "sourceId": "demo-job-board",
+      "resultados": 12,
+      "nuevas": 2,
+      "yaCapturadas": 8,
+      "yaPostuladas": 1,
+      "descartadas": 1
+    },
+    {
+      "sourceId": "demo-curated-sheet",
+      "resultados": 5,
+      "nuevas": 1,
+      "yaCapturadas": 3,
+      "yaPostuladas": 0,
+      "descartadas": 1
+    }
+  ],
+  "vacantes": [
+    {
+      "idVacante": "demo-aurora-001",
+      "titulo": "ReactJS Frontend Developer",
+      "empresa": "Aurora Labs",
+      "sourceId": "demo-job-board",
+      "estado": "capturada",
+      "slug": "2026-10-05-aurora-labs-reactjs-frontend-developer"
+    },
+    {
+      "idVacante": "demo-nimbus-001",
+      "titulo": "Senior Frontend Engineer",
+      "empresa": "Nimbus Software",
+      "sourceId": "demo-curated-sheet",
+      "estado": "ya postulada",
+      "slug": "2026-10-05-nimbus-software-senior-frontend-engineer"
+    },
+    {
+      "idVacante": "demo-descartada-001",
+      "titulo": "Staff Frontend Engineer",
+      "empresa": "Ficticia Corp",
+      "sourceId": "demo-job-board",
+      "estado": "descartada",
+      "motivo": "Nivel Staff sin experiencia suficiente (demo)."
+    }
+  ],
+  "capturadas": ["2026-10-05-aurora-labs-reactjs-frontend-developer"],
+  "particularidades": [
+    "El feed JSON del board demora ~5s en responder: esperar antes del retry (demo)."
+  ]
+}

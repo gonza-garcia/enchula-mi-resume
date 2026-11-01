@@ -30,6 +30,7 @@ const BADGE_CLASS: Record<string, string> = {
 };
 
 const TOP_MATCH = 80;
+const SIN_FUENTE = 'sin-fuente';
 
 function estadoOf(row: OfferRow): string {
   return row.application?.estado ?? 'capturada';
@@ -52,9 +53,10 @@ function labelForEstado(filter: EstadoFilter): string {
  * carpetas de docs/job-offers); aca solo se filtra y se muestra. Sin seguimiento
  * ni acciones de envio: el Submit de cualquier postulacion lo aprieta el usuario.
  */
-export default function OffersView({ rows, positionings }: OffersViewProps) {
+export default function OffersView({ rows, positionings, sources }: OffersViewProps) {
   const [estado, setEstado] = useState<EstadoFilter>('todas');
   const [perfil, setPerfil] = useState<string | null>(null);
+  const [fuente, setFuente] = useState<string | null>(null);
   const [topMatches, setTopMatches] = useState(false);
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [view, setView] = useState<ViewerView>('oferta');
@@ -87,9 +89,11 @@ export default function OffersView({ rows, positionings }: OffersViewProps) {
   const counts = useMemo(() => {
     const byState = new Map<string, number>();
     const byPerfil = new Map<string, number>();
+    const byFuente = new Map<string, number>();
     let capturadas = 0;
     let postuladas = 0;
     let top = 0;
+    let sinFuente = 0;
     for (const row of rows) {
       if (row.application) {
         postuladas += 1;
@@ -102,8 +106,10 @@ export default function OffersView({ rows, positionings }: OffersViewProps) {
         const key = id.toLowerCase();
         byPerfil.set(key, (byPerfil.get(key) ?? 0) + 1);
       }
+      if (row.fuente) byFuente.set(row.fuente, (byFuente.get(row.fuente) ?? 0) + 1);
+      else sinFuente += 1;
     }
-    return { todas: rows.length, capturadas, postuladas, top, byState, byPerfil };
+    return { todas: rows.length, capturadas, postuladas, top, byState, byPerfil, byFuente, sinFuente };
   }, [rows]);
 
   const stateFilters = useMemo(() => {
@@ -124,12 +130,14 @@ export default function OffersView({ rows, positionings }: OffersViewProps) {
         return false;
       }
       if (perfil && !row.perfiles.some((id) => id.toLowerCase() === perfil)) return false;
+      if (fuente === SIN_FUENTE && row.fuente) return false;
+      if (fuente && fuente !== SIN_FUENTE && row.fuente !== fuente) return false;
       if (topMatches && (row.matchScore ?? 0) < TOP_MATCH) return false;
       return true;
     });
     // Postuladas primero; dentro de cada grupo queda el orden natural (fecha desc).
     return [...filtered.filter((row) => row.application), ...filtered.filter((row) => !row.application)];
-  }, [rows, estado, perfil, topMatches]);
+  }, [rows, estado, perfil, fuente, topMatches]);
 
   const selected = visible.find((row) => row.slug === selectedSlug) ?? visible[0] ?? null;
 
@@ -217,6 +225,34 @@ export default function OffersView({ rows, positionings }: OffersViewProps) {
           <span>+ Agregar perfil</span>
         </button>
 
+        <div className="of-sec">Fuente</div>
+        {sources.map((source) => {
+          const active = fuente === source.id;
+          return (
+            <button
+              key={source.id}
+              type="button"
+              className={`of-item${active ? ' on' : ''}`}
+              aria-pressed={active}
+              onClick={() => setFuente(active ? null : source.id)}
+            >
+              <span>{source.nombre}</span>
+              <span className="of-count">{counts.byFuente.get(source.id) ?? 0}</span>
+            </button>
+          );
+        })}
+        {counts.sinFuente > 0 && (
+          <button
+            type="button"
+            className={`of-item${fuente === SIN_FUENTE ? ' on' : ''}`}
+            aria-pressed={fuente === SIN_FUENTE}
+            onClick={() => setFuente(fuente === SIN_FUENTE ? null : SIN_FUENTE)}
+          >
+            <span>Sin vínculo</span>
+            <span className="of-count">{counts.sinFuente}</span>
+          </button>
+        )}
+
         <div className="of-sec">Score</div>
         <button
           type="button"
@@ -239,6 +275,7 @@ export default function OffersView({ rows, positionings }: OffersViewProps) {
               onClick={() => {
                 setEstado('todas');
                 setPerfil(null);
+                setFuente(null);
                 setTopMatches(false);
               }}
             >

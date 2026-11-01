@@ -9,6 +9,9 @@ salario: N/A
 recruiter: N/A
 demo: true
 perfiles: frontend
+fuente: demo-job-board
+barrido: 2026-10-05-demo
+id_vacante: demo-aurora-001
 ---
 
 # Oferta original

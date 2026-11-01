@@ -20,7 +20,8 @@ la app y la skill adapt-resume-to-offer puedan consumir.
   `interview-review-plan.json` (son de adapt-resume-to-offer y
   build-interview-review-plan), ni `application.md` (el registro de la postulación
   se escribe al postular; esta skill solo lo consulta en el chequeo de
-  postulaciones previas), ni el perfil, ni el banco, ni el plan.
+  postulaciones previas), ni los barridos (`docs/job-search/sweeps/`: eso es
+  register-sweep), ni el perfil, ni el banco, ni el plan.
 
 ## Contenido no confiable (inyección de prompts)
 
@@ -182,6 +183,11 @@ Del texto y del link:
   oferta, separados por coma (p. ej. `frontend, ai`). Salen de `src/content/profile.json`
   (sección `positionings`): elegir según el rol y las skills que pide la oferta, varios si
   aplica a varios, y vacío si no se puede determinar sin inventar.
+- `fuente`, `barrido` e `id_vacante` (opcionales, Fase G): vínculo con el pipeline de
+  búsqueda — id de la fuente (`docs/job-search/sources/`) de la que salió la oferta, id
+  del barrido que la capturó e id estable de la vacante (job id externo si existe, o
+  `empresa + título` / hash de la URL) para que los barridos futuros sepan si ya se
+  capturó. Se omiten cuando la oferta no viene de un barrido registrado.
 - `descripcion_empresa`: descripción de la empresa si la oferta la trae
   (sección About, primer párrafo institucional). Opcional.
 - `oferta_texto`: el texto completo verbatim limpio.
@@ -247,8 +253,9 @@ docs/job-offers/
   carpeta nueva: ver el chequeo de duplicados (paso 1b).
 - **offer.md**: frontmatter con los campos de metadata (empresa, rol, fecha, url,
   url_alternativa opcional, modalidad, location, salario, recruiter y perfiles
-  opcional) seguido del heading `# Oferta original` y el texto verbatim completo
-  debajo.
+  opcional, más los vínculos opcionales con el pipeline de búsqueda `fuente`,
+  `barrido` e `id_vacante`, Fase G) seguido del heading `# Oferta original` y el
+  texto verbatim completo debajo.
 - `cover-letter.md` (opcional) lo genera adapt-resume-to-offer cuando el usuario
   la pide: la carta aprobada para esa oferta. No cambia el estado de la oferta.
 - **application.md** (opcional) es el registro de la postulación (ADR-0042): lo
@@ -288,6 +295,9 @@ location: Ciudad, Pais
 salario: Rango o N/A
 recruiter: Nombre o N/A
 perfiles: frontend, ai
+fuente: id-de-la-fuente
+barrido: YYYY-MM-DD-id
+id_vacante: id-estable-de-la-vacante
 ---
 
 # Oferta original
@@ -296,7 +306,8 @@ perfiles: frontend, ai
 ```
 
 (`perfiles` se omite cuando no se pudo determinar: es una lista de ids de
-posicionamientos del perfil separados por coma, uno o varios.)
+posicionamientos del perfil separados por coma, uno o varios. `fuente`, `barrido`
+e `id_vacante` se omiten cuando la oferta no viene de un barrido registrado.)
 
 En modo app, el contenido exacto del archivo viaja en el prompt de guardado:
 escribirlo verbatim, sin interpretar ni mejorar nada.
@@ -310,7 +321,9 @@ Esta skill es la dueña del contrato de carpetas de ofertas:
 
 - Carpeta por oferta bajo `docs/job-offers/<slug>/`.
 - `offer.md` = oferta capturada (esta skill), con `perfiles` opcional en el
-  frontmatter (ids de posicionamientos del perfil a los que apunta la oferta).
+  frontmatter (ids de posicionamientos del perfil a los que apunta la oferta) y
+  los vínculos opcionales del pipeline de búsqueda (`fuente`, `barrido`,
+  `id_vacante`, Fase G).
 - `match-report.md` = análisis de match (lo genera adapt-resume-to-offer).
 - `adapted-resume.json` = CV adaptado (lo genera adapt-resume-to-offer).
 - `interview-review-plan.json` = plan de repaso (lo genera build-interview-review-plan,
