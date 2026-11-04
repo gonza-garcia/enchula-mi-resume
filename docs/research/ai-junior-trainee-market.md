@@ -280,7 +280,7 @@ Fuente de las estrellas y descripciones: API de GitHub, consulta del 28 de septi
 - **Sesgo de la fuente.** La Guest Jobs API de LinkedIn devuelve tarjetas publicas para las keywords usadas, con sesgo hacia empresas grandes y programas de graduados (TikTok, ByteDance, SAP, Accenture, Deloitte, IBM). Las startups chicas y las busquedas por referencia quedan subrepresentadas.
 - **Sesgo geografico.** Las queries se corrieron con Worldwide, Argentina, Latin America y Remote. No se cubrio Asia ni Europa en profundidad, salvo lo que la API devolvio de forma espontanea.
 - **Verificado hoy versus reportado por.** Se marco con URL cada cifra. Las cifras de aidevboard, axialsearch, Nucamp, Hire With Near y NBS se tomaron de los resumenes de busqueda y se citan como "reportado por", salvo Apiva, Rung, Landed, GitHub, CNBC, Medium, Quartz, RezScore, HackerNoon, Milvus, Business Insider, IT Jobs Watch, Teal, Built In, Joblinking y Underdog, que se abrieron y se leen como verificados hoy.
-- **No se incluyo nada del CV del candidato ni de la carpeta `enchula-mi-resume-privado-no-commit`.** Este documento es de mercado.
+- **No se incluyo nada del CV del candidato ni de la carpeta privada (`privado`; antes `enchula-mi-resume-privado-no-commit`).** Este documento es de mercado.
 - **Fechas de los reportes externos.** Cada fuente declara su fecha: Apiva septiembre 2026, Rung septiembre 2026, aidevboard 17 de septiembre de 2026, Landed actualizado al 25 de julio de 2026, RezScore 5 de enero de 2026, IT Jobs Watch al 4 de septiembre de 2026. Donde una cifra no tenia fecha, se marco "no verificado".
 
 ## Fuentes

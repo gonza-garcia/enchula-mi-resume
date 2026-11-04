@@ -61,6 +61,14 @@ test.describe('Contrato de barridos (Fase G)', () => {
     ).toBe(true);
   });
 
+  test('enRadarDesde registra la antiguedad de la vacante en el radar', () => {
+    const vacante = { idVacante: 'v', titulo: 'T', sourceId: 's', estado: 'nueva', enRadarDesde: '2026-10-24-barrido' };
+    const parsed = sweepSchema.safeParse(demoSweep({ vacantes: [vacante] }));
+    expect(parsed.success).toBe(true);
+    const demo = listSweeps().find((sweep) => sweep.id === '2026-10-05-demo');
+    expect(demo).toBeTruthy();
+  });
+
   test('un barrido invalido falla nombrando el archivo', () => {
     expect(() => parseSweep('{"id": "x"}', 'sweeps/roto.json')).toThrow(/sweeps\/roto\.json/);
     expect(() => parseSweep('{', 'sweeps/roto.json')).toThrow(/JSON mal formado/);

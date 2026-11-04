@@ -35,6 +35,14 @@ test.describe('Contrato de fuentes de busqueda (Fase G)', () => {
     expect(sourceSchema.safeParse({ ...base }).success).toBe(false);
   });
 
+  test('prioridad es opcional y marca las fuentes que se barren primero', () => {
+    const base = { id: 'x', nombre: 'X', tipo: 'company-board', playbook: { buscar: 'b', herramientas: [], quirks: [] } };
+    expect(sourceSchema.safeParse({ ...base, prioridad: true }).success).toBe(true);
+    expect(sourceSchema.safeParse({ ...base, prioridad: false }).success).toBe(true);
+    expect(sourceSchema.safeParse(base).success).toBe(true);
+    expect(sourceSchema.safeParse({ ...base, prioridad: 'si' }).success).toBe(false);
+  });
+
   test('una fuente invalida falla nombrando el archivo', () => {
     expect(() => parseSearchSource('{"id": "x"}', 'sources/rota.json')).toThrow(/sources\/rota\.json/);
     expect(() => parseSearchSource('no es json', 'sources/rota.json')).toThrow(/JSON mal formado/);

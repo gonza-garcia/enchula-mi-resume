@@ -31,7 +31,12 @@ export const sweepVacancySchema = z.object({
   /** Razon del descarte. Requerido cuando el estado es `descartada`. */
   motivo: optionalText,
   /** Slug de la carpeta de la oferta, cuando quedo capturada o ya existia. */
-  slug: optionalText
+  slug: optionalText,
+  /**
+   * Antiguedad en el radar: id del barrido (o fecha) donde la vacante aparecio
+   * por primera vez. Permite medir hace cuanto esta dando vueltas.
+   */
+  enRadarDesde: optionalText
 });
 
 /** Resumen por fuente barrida. */

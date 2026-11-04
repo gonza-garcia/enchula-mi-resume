@@ -59,6 +59,7 @@ const statsFor = (sourceId: string) => {
           <header class="fuente-head">
             <h2>{source.nombre}</h2>
             <span class="chip">{source.tipo}</span>
+            {source.prioridad && <span class="chip fuente-prio">prioritaria</span>}
             <span class={`chip${source.activa === false ? ' fuente-off' : ''}`}>
               {source.activa === false ? 'inactiva' : 'activa'}
             </span>
@@ -151,6 +152,9 @@ const statsFor = (sourceId: string) => {
   }
   .fuente-off {
     opacity: 0.6;
+  }
+  .fuente-prio {
+    font-weight: 600;
   }
   .fuente-url {
     font-size: 11px;

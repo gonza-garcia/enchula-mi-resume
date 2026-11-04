@@ -21,6 +21,12 @@ export const sourceSchema = z.object({
   url: z.string().min(1).nullable().optional(),
   /** Fuente inactiva: se conserva por su historial pero no se barre. */
   activa: z.boolean().optional(),
+  /**
+   * Fuente prioritaria del usuario (empresas que le gustan y donde tiene gente
+   * que puede referir): se barren primero y sus vacantes se senalan en el
+   * reporte del barrido.
+   */
+  prioridad: z.boolean().optional(),
   /** Fuente ficticia de demostracion: la unica que entra en un build publicable. */
   demo: z.boolean().optional(),
   /** Como actuar en esta fuente para encontrar y capturar vacantes. */

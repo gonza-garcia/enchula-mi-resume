@@ -34,6 +34,19 @@ actualizan el playbook de la fuente. Deja el registro en
 - **Modo directo**: el usuario pide registrar el barrido. Aplicás todos los pasos,
   incluido el guardado en disco y la validación en build.
 
+## Alcance de cada barrido
+
+- **Todas las fuentes activas del catálogo, siempre.** Un barrido cubre el catálogo
+  completo (las fuentes con `activa: false` se saltean y se listan como tales); nada de
+  barrer solo un subconjunto.
+- **Fuentes prioritarias primero.** Las fuentes con `prioridad: true` en el catálogo
+  (empresas que el usuario valora y donde tiene referentes) se barren primero y sus
+  vacantes van **señaladas** en el registro y en el reporte.
+- **Nada bloquea el barrido.** Si una herramienta falla o una fuente necesita interacción
+  del usuario (login, captcha, sesión), se registra la fuente como `sin acceso` con la
+  causa y **se sigue con las demás**. Las ayudas que hagan falta se piden recién al final,
+  después del reporte, para no frenar la pasada.
+
 ## Pasos
 
 ### 1. Leer las fuentes y lo ya hecho
@@ -55,6 +68,12 @@ Para cada vacante del barrido, con su id estable (job id externo si existe, o
 - `ya postulada`: además tiene `application.md` (mostrar fecha y estado).
 - `descartada`: no se captura, con `motivo` obligatorio (nivel, geo, stack, veto del
   usuario...). Los descartes sin carpeta viven solo en este registro.
+
+**Radar y antigüedad:** además del estado, cruzar contra los barridos anteriores (mismo
+`idVacante`, misma URL o mismo contenido) y completar `enRadarDesde` con el id del primer
+barrido donde apareció. El reporte debe poder responder "¿ya estaba en el radar?, ¿desde
+cuándo?, ¿se capturó o no?": una vacante que da vueltas hace varios barridos se señala
+como tal (y si venció su frescura o su ventana, va a `descartada` con ese motivo).
 
 ### 3. Anotar las particularidades y actualizar el playbook
 
@@ -110,8 +129,28 @@ frontmatter `fuente`, `barrido` (este id) e `id_vacante`. Si la captura la hizo
 capture-job-offer sin esos campos, parchearlos (el frontmatter es dueña
 capture-job-offer; solo se agregan esos tres campos, nada más).
 
+### 7. Reportar en el chat (siempre al terminar)
+
+Con el barrido ya registrado en disco, mostrar **una tabla en el chat** con una fila por
+fuente y estas columnas:
+
+| Fuente | Acceso | Frutos | Notas |
+|---|---|---|---|
+| `<nombre>` | OK / sin acceso + causa | nuevas / capturadas / descartadas / nada | en el radar desde X, prioritaria, etc. |
+
+Más un resumen corto (totales: fuentes barridas vs inaccesibles, vacantes nuevas,
+capturadas y descartadas, y las vacantes prioritarias si las hubo). La tabla refleja
+exactamente lo registrado en el JSON del barrido.
+
+**Ayuda al usuario, solo al final:** si hubo fuentes sin acceso o que requieren
+interacción (herramienta rota, login, captcha, file chooser), pedirlo recién después de
+mostrar la tabla, listando qué se necesita por fuente. Nunca interrumpir el barrido para
+pedir ayuda: una fuente que falla se registra y la pasada sigue.
+
 ## Criterio de completado
 
-El barrido existe en disco con todas las vacantes de la pasada y sus estados, las
-descartadas con motivo, las particularidades anotadas, el playbook de las fuentes
-actualizado si corresponde, y `pnpm run check && pnpm run build` en verde.
+El barrido existe en disco con todas las vacantes de la pasada y sus estados (con
+`enRadarDesde` cuando aplica), las descartadas con motivo, las particularidades anotadas,
+el playbook de las fuentes actualizado si corresponde, `pnpm run check && pnpm run build`
+en verde, **y la tabla del reporte mostrada en el chat** con las ayudas pedidas al final
+si las hubo.

@@ -605,3 +605,48 @@ contexto y no contradecir las decisiones vigentes de este README.
   demo y specs (11 tests). Aditivo: `offer.md` acepta `fuente`/`barrido`/`id_vacante`
   opcionales. Verificación en verde: 330 tests. El sync al staging se hace al cierre de la
   fase con su auditoría de rigor.
+- 1 nov 2026 (Fase G, cierre): **fuentes y barridos como producto**. La página `/fuentes`
+  lista el catálogo de fuentes con su tipo y su playbook de extracción (cómo buscar,
+  herramientas, quirks), sus ofertas históricas vinculadas y sus stats; la navbar pasa a 5
+  destinos; `/ofertas` suma la sección "Barridos" (historial con números, detalle de
+  vacantes con motivo y particularidades del proceso) y el filtro por fuente. La skill
+  `register-sweep` registra cada barrido y mejora el playbook de la fuente;
+  `capture-job-offer` vincula cada captura a su fuente/barrido/id de vacante. Backfill de
+  los dos barridos históricos del pipeline con todos sus descartes y motivos (los datos
+  reales viven solo en la instancia; al repo público viaja solo el contenido demo).
+  Verificación en verde: 337 tests en la instancia y 276 en el staging.
+- 1 nov 2026 (sesión operativa): **barrido del pipeline registrado con el nuevo contrato**
+  (primer uso de `register-sweep`): WAD, startupsargentina, a16z, Sequoia, career-ops,
+  casilla y el sheet curado de fuentes nuevas, con vetos primero, 1 oferta capturada
+  (frontera del umbral, decisión de postular en el usuario) y todos los descartes con su
+  motivo en `docs/job-search/sweeps/`. La casilla dejó un rechazo viejo sin cargar en su
+  registro de postulación: outcome completado al contrato. Sin cambios de superficie de
+  producto: sin re-sync al staging (los barridos y ofertas reales son dato del usuario) y
+  sin resync con el agente de evidencias.
+- 2 nov 2026: **12 fuentes nuevas en el catálogo**, tomadas de las abiertas que el usuario
+  mantiene para buscar empleo (leídas en solo lectura desde su navegador): una plaza
+  freelance, una red de talento, una agencia de staffing, cinco career pages de empresas,
+  una agregadora de roles remotos, los boards Workday de varias empresas y las alertas de
+  una red social (tipo `social`, con la regla de cotejar siempre el ATS original). Cada
+  una con su playbook (cómo buscar, herramientas y quirks). Los archivos de fuentes
+  reales no viajan al staging (filtro demo del sync). Verificación en verde: 338 tests.
+- 2 nov 2026 (tarde): **reglas de proceso del barrido + 8 fuentes nuevas y fuentes
+  prioritarias**. El contrato de barridos queda con las reglas del usuario: cada barrido
+  cubre todas las fuentes activas (las prioritarias primero), cada vacante cruza contra el
+  radar (desde cuándo está en él, además de si ya está capturada o postulada), nada
+  bloquea la pasada (una fuente inaccesible se registra con su causa y se sigue), y al
+  final siempre una tabla en el chat con el resultado por fuente — las ayudas que haga
+  falta se piden después de la tabla, nunca durante el barrido. Campos nuevos (aditivos)
+  en el contrato: `prioridad` en fuentes y `enRadarDesde` en vacantes, con sus specs y
+  chip en la página de fuentes. Ocho fuentes nuevas (boards de empresas pedidas por el
+  usuario y un career site de Workday identificado por su JSON-LD) y seis fuentes marcadas
+  como prioritarias (empresas cuya cultura gusta al usuario y donde tiene referentes
+  posibles). Verificación en verde: 340 tests.
+- 4 nov 2026: **reorden del workspace de desarrollo** (decisión de la persona usuaria):
+  las carpetas del proyecto se renombran y ordenan (árbol de instancia, espejo público y
+  material privado, este último con su contenido agrupado por tema), el árbol legado se
+  elimina tras rescatar su único archivo único y verificar la paridad del resto, y la raíz
+  queda documentada con un README de inventario y un AGENTS.md de reglas. Los paths
+  internos de las herramientas se actualizan a los nombres nuevos. Sin cambios de
+  superficie de producto más allá de un documento de diseño rescatado: esta entrada viaja
+  al repo público en el próximo sync.
