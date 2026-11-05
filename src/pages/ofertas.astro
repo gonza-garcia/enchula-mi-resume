@@ -39,6 +39,7 @@ const rows: OfferRow[] = listOffers().map((listing) => {
     rol: listing.meta.rol,
     fecha: listing.meta.fecha,
     url: listing.meta.url,
+    urlAlternativas: listing.meta.urlAlternativas,
     modalidad: listing.meta.modalidad,
     location: listing.meta.location,
     salario: listing.meta.salario,
@@ -273,14 +274,40 @@ const positionings = profile.positionings.map((positioning) => ({
       padding-right: 10px;
     }
     .of-sec {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+      padding: 0;
+      border: none;
+      background: none;
+      font-family: inherit;
       font-size: 10px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--muted);
       margin: 14px 0 6px 2px;
+      text-align: left;
+      cursor: pointer;
     }
-    .of-sec:first-child {
+    .of-sec:hover {
+      color: var(--ink);
+    }
+    .of-sec:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .of-group:first-child .of-sec {
       margin-top: 0;
+    }
+    .of-chevron {
+      display: inline-block;
+      font-size: 13px;
+      line-height: 1;
+      transition: transform 150ms ease;
+    }
+    .of-chevron.open {
+      transform: rotate(90deg);
     }
     .of-item {
       display: flex;
@@ -525,6 +552,11 @@ const positionings = profile.positionings.map((positioning) => ({
       color: var(--muted);
     }
     .tiny {
+      font-size: 11px;
+    }
+    /* Misma escala que .tiny, para los bloques de datos de la vista Postulacion
+       (la clase ya se usaba sin regla y los textos salian con el tamano base). */
+    .of-tiny {
       font-size: 11px;
     }
 

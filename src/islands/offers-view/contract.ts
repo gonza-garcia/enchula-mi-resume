@@ -1,9 +1,9 @@
 import type { Resume } from '../../schemas/resume';
 import type { Application, ApplicationState } from '../../schemas/application';
 import type { Sweep } from '../../schemas/sweep';
-import type { OfferState } from '../../lib/job-offers';
+import type { OfertaLink, OfferState } from '../../lib/job-offers';
 
-export type { Application, ApplicationState, OfferState, Sweep };
+export type { Application, ApplicationState, OfertaLink, OfferState, Sweep };
 
 /**
  * Fila de la vista "Ofertas" (Fase F, variante D): la data de la carpeta de la
@@ -16,6 +16,8 @@ export interface OfferRow {
   /** Fecha de captura (frontmatter de offer.md). */
   fecha: string;
   url: string | null;
+  /** Otras URLs del mismo aviso (`url_alternativa`, con su nota si la trae). */
+  urlAlternativas: OfertaLink[];
   modalidad: string;
   location: string | null;
   salario: string | null;
@@ -61,10 +63,21 @@ export interface OffersViewProps {
   sources: SourceRef[];
 }
 
-/** Estados de la barra lateral de "Estado" (ademas de los del contrato). */
-export type EstadoFilter = 'todas' | 'capturadas' | 'postuladas' | ApplicationState;
+/**
+ * Filtros del sidebar de Estado en `/ofertas` (Fase H, ADR-0044): sin el paraguas
+ * "Postuladas" y con los 4 estados del contrato en plural. El orden de esta lista
+ * es el orden del sidebar y las etiquetas son las del diseno aprobado.
+ */
+export type EstadoFilter = 'todas' | 'capturadas' | ApplicationState;
 
-export const ESTADO_FILTERS: EstadoFilter[] = ['todas', 'capturadas', 'postuladas'];
+export const ESTADO_FILTERS: { key: EstadoFilter; label: string }[] = [
+  { key: 'todas', label: 'Todas' },
+  { key: 'capturadas', label: 'Capturadas' },
+  { key: 'borrador', label: 'Borrador' },
+  { key: 'enviada', label: 'Enviadas' },
+  { key: 'confirmada', label: 'Confirmadas' },
+  { key: 'descartada', label: 'Descartadas' }
+];
 
 export type ViewerView = 'oferta' | 'cv' | 'cover' | 'postulacion';
 

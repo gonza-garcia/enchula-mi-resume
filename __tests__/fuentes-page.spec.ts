@@ -44,7 +44,7 @@ test.describe('Fuentes (Fase G)', () => {
 
     const sheet = page.locator('.fuente-card', { hasText: 'Demo Curated Spreadsheet' });
     await expect(sheet.locator('.fuente-historial')).toContainText('Nimbus Software');
-    await expect(sheet.locator('.fuente-historial')).toContainText('postulación: vetada');
+    await expect(sheet.locator('.fuente-historial')).toContainText('postulación: descartada');
   });
 
   test('la navbar muestra los 5 destinos con Fuentes activo', async ({ page }) => {

@@ -6,12 +6,10 @@ export type { OfferListing, OfferMeta, OfferState, CoverLetterFile };
 
 /** Chip de estado de la postulacion (application.md): pills solo para etiquetas. */
 export const POST_BADGE_CLASS: Record<string, string> = {
+  borrador: 'of-badge-borrador',
   enviada: 'of-badge-enviada',
   confirmada: 'of-badge-confirmada',
-  vetada: 'of-badge-vetada',
-  descartada: 'of-badge-descartada',
-  borrador: 'of-badge-borrador',
-  'en preparacion': 'of-badge-borrador'
+  descartada: 'of-badge-descartada'
 };
 
 export interface OfferView {

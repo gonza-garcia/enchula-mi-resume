@@ -41,10 +41,11 @@ qué contrato es dueña, qué archivos puede escribir y qué no toca. Antes de
 escribir un archivo, leer esa sección en la skill dueña de su contrato.
 El estado de una oferta se deriva de la presencia de archivos: Agregada (offer.md),
 Analizada (match-report.md), Adaptada (adapted-resume.json) y Postulada
-(`application.md`, con su estado del contrato: borrador, en preparacion, enviada,
-confirmada, vetada o descartada). El gestor de ofertas en la tab "CVs adaptados" de
+(`application.md`, con su estado del contrato: borrador, enviada, confirmada o
+descartada). El gestor de ofertas en la tab "CVs adaptados" de
 "Mis perfiles" (`/`) lista exactamente lo que hay en disco, y la vista `/ofertas`
-muestra los resultados del pipeline con filtros por estado y perfil (ADR-0042).
+muestra los resultados del pipeline con filtros por estado y perfil (ADR-0042 y
+ADR-0044).
 
 ## Agent skills
 

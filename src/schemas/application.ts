@@ -1,19 +1,24 @@
 import { z } from 'zod';
 
 /**
- * Contrato de resultado de una postulacion (Fase F, ADR-0042): el frontmatter de
+ * Contrato de resultado de una postulacion (Fase F, ADR-0042; estados reducidos
+ * a 4 en la Fase H, ADR-0044): el frontmatter de
  * `docs/job-offers/<slug>/application.md` es lo que la app lee y muestra como
  * "postulacion". El tracker del pipeline es el dueno del estado para el flujo de
  * postulaciones; este contrato no lo duplica, solo describe el resultado por oferta.
  */
-export const APPLICATION_STATES = [
-  'borrador',
-  'en preparacion',
-  'enviada',
-  'confirmada',
-  'vetada',
-  'descartada'
-] as const;
+export const APPLICATION_STATES = ['borrador', 'enviada', 'confirmada', 'descartada'] as const;
+
+/**
+ * De donde viene cada estado de los 4 (ADR-0044): `borrador` funde el legacy
+ * `en preparacion` y `descartada` funde el legacy `vetada`. La migracion de los
+ * `application.md` reales ya se hizo (5 nov 2026); el schema es estricto a
+ * proposito y un estado legacy rompe el build nombrando el archivo.
+ */
+export const LEGACY_APPLICATION_STATES = {
+  'en preparacion': 'borrador',
+  vetada: 'descartada'
+} as const satisfies Partial<Record<string, (typeof APPLICATION_STATES)[number]>>;
 
 /** Resultado posterior registrado por el flujo (sin seguimiento). */
 export const APPLICATION_OUTCOMES = ['rechazada', 'entrevista', 'oferta'] as const;
@@ -27,7 +32,7 @@ export const applicationSchema = z
     /** Fecha de envio o de decision. Alias legacy: `fecha_envio` (ver parser). */
     fecha: optionalText,
     estado: z.enum(APPLICATION_STATES),
-    /** Razon del veto o del descarte. Requerido cuando no se envio. */
+    /** Razon del descarte: por que la oferta no se envia. Requerido en `descartada`. */
     motivo: optionalText,
     ats: optionalText,
     /** Texto devuelto por el ATS (capturado en pantalla o por mail). */
@@ -39,11 +44,11 @@ export const applicationSchema = z
     outcome_fecha: optionalText
   })
   .superRefine((application, ctx) => {
-    if ((application.estado === 'vetada' || application.estado === 'descartada') && !application.motivo) {
+    if (application.estado === 'descartada' && !application.motivo) {
       ctx.addIssue({
         code: 'custom',
         path: ['motivo'],
-        message: 'motivo es requerido cuando el estado es vetada o descartada'
+        message: 'motivo es requerido cuando el estado es descartada'
       });
     }
   });

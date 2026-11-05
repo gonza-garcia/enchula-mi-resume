@@ -3,7 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 /**
  * Cambio 3 de la Fase F: chip de estado y seccion "Postulacion" en el gestor de
  * ofertas (tab "CVs adaptados") + deep link ?tab=adaptados&oferta=<slug>. Contra
- * el build demo: aurora-labs (confirmada) y nimbus (vetada con motivo).
+ * el build demo: aurora-labs (confirmada) y nimbus (descartada con motivo).
  */
 
 const AURORA = '2026-10-05-aurora-labs-reactjs-frontend-developer';
@@ -20,14 +20,14 @@ test.describe('Chip de estado de la postulacion en las cards', () => {
     await page.goto('/?tab=adaptados');
     await waitHydrated(page);
     const nimbus = page.locator('.offer-card').filter({ hasText: 'Nimbus Software' });
-    await expect(nimbus.locator('.offer-card-post')).toHaveText(/Postulaci.n: vetada/);
+    await expect(nimbus.locator('.offer-card-post')).toHaveText(/Postulaci.n: descartada/);
     const aurora = page.locator('.offer-card').filter({ hasText: 'Aurora Labs' });
     await expect(aurora.locator('.offer-card-post')).toHaveText(/Postulaci.n: confirmada/);
   });
 });
 
 test.describe('Seccion Postulacion en el panel del gestor', () => {
-  test('vetada: estado, motivo y sin documentos', async ({ page }) => {
+  test('descartada: estado, motivo y sin documentos', async ({ page }) => {
     await page.goto('/?tab=adaptados');
     await waitHydrated(page);
     await page
@@ -36,7 +36,7 @@ test.describe('Seccion Postulacion en el panel del gestor', () => {
       .locator('.offer-card-select')
       .click();
     const post = page.locator('.offer-post');
-    await expect(post.locator('.of-badge')).toHaveText('vetada');
+    await expect(post.locator('.of-badge')).toHaveText('descartada');
     await expect(post).toContainText(
       'La vacante exige reubicacion y guardias on-call obligatorias: veto del usuario.'
     );
@@ -81,7 +81,7 @@ test.describe('Deep link ?tab=adaptados&oferta=<slug>', () => {
     await waitHydrated(page);
     await expect(page.locator('html')).toHaveAttribute('data-cv-tab', 'adapted');
     await expect(page.locator('.offer-card.active')).toContainText('Nimbus Software');
-    await expect(page.locator('.offer-post .of-badge')).toHaveText('vetada');
+    await expect(page.locator('.offer-post .of-badge')).toHaveText('descartada');
   });
 
   test('un slug desconocido cae en la seleccion por defecto, sin romper nada', async ({ page }) => {

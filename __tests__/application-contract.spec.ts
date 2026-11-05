@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { applicationSchema, APPLICATION_STATES } from '../src/schemas/application';
+import { applicationSchema, APPLICATION_STATES, LEGACY_APPLICATION_STATES } from '../src/schemas/application';
 import { APPLICATION_FILE, listOffers, parseApplicationFile } from '../src/lib/job-offers';
 
 process.env.OFFERS_SOURCE = 'demo';
@@ -25,11 +25,11 @@ test.describe('Contrato de resultado application.md (Fase F)', () => {
     }
   });
 
-  test('la demo cubre estado confirmada y estado vetada con motivo', () => {
+  test('la demo cubre estado confirmada y estado descartada con motivo', () => {
     expect(parseApplicationFile(readApplication(DEMO_SLUGS[0]), 'demo').estado).toBe('confirmada');
-    const vetada = parseApplicationFile(readApplication(DEMO_SLUGS[1]), 'demo');
-    expect(vetada.estado).toBe('vetada');
-    expect((vetada.motivo ?? '').length).toBeGreaterThan(0);
+    const descartada = parseApplicationFile(readApplication(DEMO_SLUGS[1]), 'demo');
+    expect(descartada.estado).toBe('descartada');
+    expect((descartada.motivo ?? '').length).toBeGreaterThan(0);
   });
 
   test('el estado es obligatorio y solo admite valores del contrato', () => {
@@ -41,8 +41,17 @@ test.describe('Contrato de resultado application.md (Fase F)', () => {
     }
   });
 
-  test('vetada y descartada exigen motivo', () => {
-    expect(applicationSchema.safeParse({ empresa: 'X', rol: 'Y', estado: 'vetada' }).success).toBe(false);
+  test('los estados legacy de la migracion de la Fase H quedan rechazados', () => {
+    for (const legacy of ['en preparacion', 'vetada']) {
+      const parsed = applicationSchema.safeParse({ empresa: 'X', rol: 'Y', estado: legacy });
+      expect(parsed.success).toBe(false);
+      expect(LEGACY_APPLICATION_STATES[legacy as keyof typeof LEGACY_APPLICATION_STATES]).toBeTruthy();
+    }
+    expect(APPLICATION_STATES).toHaveLength(4);
+    expect([...APPLICATION_STATES]).toEqual(['borrador', 'enviada', 'confirmada', 'descartada']);
+  });
+
+  test('descartada exige motivo; borrador, enviada y confirmada no', () => {
     expect(applicationSchema.safeParse({ empresa: 'X', rol: 'Y', estado: 'descartada' }).success).toBe(false);
     expect(
       applicationSchema.safeParse({
@@ -52,6 +61,9 @@ test.describe('Contrato de resultado application.md (Fase F)', () => {
         motivo: 'sin vacante frontend'
       }).success
     ).toBe(true);
+    for (const estado of ['borrador', 'enviada', 'confirmada'] as const) {
+      expect(applicationSchema.safeParse({ empresa: 'X', rol: 'Y', estado }).success).toBe(true);
+    }
   });
 
   test('fecha_envio es alias legacy y "pendiente"/"N/A" se normalizan a null', () => {

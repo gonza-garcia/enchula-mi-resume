@@ -23,6 +23,10 @@ test.describe('Header unificado (Toolbar compartido)', () => {
       await expect(page.locator('[data-export="linkedin"]')).toHaveCount(1);
       await expect(page.locator('.theme-panel')).toBeVisible();
 
+      // El tip del header quedó fuera (Fase H): el header no explica el flujo de
+      // export. Si reaparece un `.contactline` dentro del toolbar, es el tip.
+      await expect(page.locator('.toolbar .contactline')).toHaveCount(0);
+
       const style = await page.locator('.toolbar').evaluate((el) => {
         const s = getComputedStyle(el);
         return { position: s.position, display: s.display, minHeight: s.minHeight };

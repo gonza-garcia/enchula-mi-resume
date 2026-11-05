@@ -2,7 +2,8 @@
 empresa: Nimbus Software
 rol: Senior Frontend Engineer
 fecha: 2026-10-05
-url: N/A
+url: https://careers.nimbus-software.example/roles/senior-frontend-engineer
+url_alternativa: https://jobs.nimbus-software.example/postings/8842 (mismo aviso, publicacion duplicada)
 modalidad: remote
 location: Remote (worldwide)
 salario: N/A

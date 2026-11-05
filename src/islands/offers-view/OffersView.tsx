@@ -1,31 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type {
-  ApplicationState,
-  EstadoFilter,
-  OfferRow,
-  OffersViewProps,
-  ViewerView
-} from './contract';
+import type { ReactNode } from 'react';
+import type { EstadoFilter, OfferRow, OffersViewProps, ViewerView } from './contract';
 import { ESTADO_FILTERS, VIEWER_VIEWS } from './contract';
 import AdaptedCvView from './AdaptedCvView';
 import ProfilePromptModal from './ProfilePromptModal';
 
-const CONTRACT_STATES: ApplicationState[] = [
-  'borrador',
-  'en preparacion',
-  'enviada',
-  'confirmada',
-  'vetada',
-  'descartada'
-];
-
 const BADGE_CLASS: Record<string, string> = {
+  borrador: 'of-badge-borrador',
   enviada: 'of-badge-enviada',
   confirmada: 'of-badge-confirmada',
-  vetada: 'of-badge-vetada',
   descartada: 'of-badge-descartada',
-  borrador: 'of-badge-borrador',
-  'en preparacion': 'of-badge-borrador',
   capturada: 'of-badge-capturada'
 };
 
@@ -40,11 +24,68 @@ function fechaOf(row: OfferRow): string {
   return row.application?.fecha || row.fecha;
 }
 
-function labelForEstado(filter: EstadoFilter): string {
-  if (filter === 'todas') return 'Todas';
-  if (filter === 'capturadas') return 'Capturadas';
-  if (filter === 'postuladas') return 'Postuladas';
-  return filter.charAt(0).toUpperCase() + filter.slice(1);
+/* ---- Predicados de filtro: una sola definicion para la lista y los conteos ----
+   Antes de la H0 los conteos se calculaban sobre todas las filas mientras que la
+   lista aplicaba los filtros: en cuanto habia un filtro de perfil, fuente o score
+   activo, los numeros del sidebar dejaban de describir la lista (4-nov-2026:
+   "Todas 64" con 12 cards a la vista y filtros de estado con cuenta positiva y
+   lista vacia). Compartir los predicados hace que el numero de un filtro sea
+   exactamente lo que devuelve la lista al activarlo. */
+
+function matchEstado(row: OfferRow, filter: EstadoFilter): boolean {
+  if (filter === 'todas') return true;
+  if (filter === 'capturadas') return !row.application;
+  return row.application?.estado === filter;
+}
+
+function matchPerfil(row: OfferRow, perfil: string | null): boolean {
+  if (!perfil) return true;
+  return row.perfiles.some((id) => id.toLowerCase() === perfil);
+}
+
+function matchFuente(row: OfferRow, fuente: string | null): boolean {
+  if (!fuente) return true;
+  if (fuente === SIN_FUENTE) return !row.fuente;
+  return row.fuente === fuente;
+}
+
+function matchTop(row: OfferRow, onlyTop: boolean): boolean {
+  return !onlyTop || (row.matchScore ?? 0) >= TOP_MATCH;
+}
+
+/** Grupo de filtros colapsable del sidebar (H0c). */
+function FilterGroup({
+  id,
+  title,
+  open,
+  onToggle,
+  children
+}: {
+  id: string;
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <section className="of-group">
+      <button
+        type="button"
+        className="of-sec of-sec-toggle"
+        aria-expanded={open}
+        aria-controls={`of-grupo-${id}`}
+        onClick={onToggle}
+      >
+        <span className={`of-chevron${open ? ' open' : ''}`} aria-hidden="true">
+          &#8250;
+        </span>
+        <span>{title}</span>
+      </button>
+      <div id={`of-grupo-${id}`} hidden={!open}>
+        {children}
+      </div>
+    </section>
+  );
 }
 
 /**
@@ -58,6 +99,18 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
   const [perfil, setPerfil] = useState<string | null>(null);
   const [fuente, setFuente] = useState<string | null>(null);
   const [topMatches, setTopMatches] = useState(false);
+  // Grupos del sidebar colapsables (H0c): Estado y Perfil abiertos, que son los
+  // filtros de todos los dias; Fuente y Score colapsados, porque el listado de
+  // fuentes es largo y el corte de score es un solo toggle. Un grupo con un
+  // filtro activo se fuerza abierto: nunca se pierde un filtro puesto.
+  const [grupos, setGrupos] = useState<Record<string, boolean>>({
+    estado: true,
+    perfil: true,
+    fuente: false,
+    score: false
+  });
+  const toggleGrupo = (id: string) => setGrupos((prev) => ({ ...prev, [id]: !prev[id] }));
+  const grupoAbierto = (id: string, conFiltroActivo: boolean) => grupos[id] || conFiltroActivo;
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [view, setView] = useState<ViewerView>('oferta');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -86,57 +139,79 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
     };
   }, [menuOpen]);
 
+  /**
+   * Conteos facetados (H0a): cada dimension se cuenta sobre las filas que pasan
+   * los OTROS filtros activos, nunca sobre `rows` a secas. Es lo que hace que el
+   * numero que va junto a un filtro sea exactamente la cantidad de cards que
+   * aparecen al activarlo ("cuentas exactas").
+   */
   const counts = useMemo(() => {
+    const withoutEstado = rows.filter(
+      (row) => matchPerfil(row, perfil) && matchFuente(row, fuente) && matchTop(row, topMatches)
+    );
     const byState = new Map<string, number>();
-    const byPerfil = new Map<string, number>();
-    const byFuente = new Map<string, number>();
     let capturadas = 0;
-    let postuladas = 0;
-    let top = 0;
-    let sinFuente = 0;
-    for (const row of rows) {
+    for (const row of withoutEstado) {
       if (row.application) {
-        postuladas += 1;
         byState.set(row.application.estado, (byState.get(row.application.estado) ?? 0) + 1);
       } else {
         capturadas += 1;
       }
-      if ((row.matchScore ?? 0) >= TOP_MATCH) top += 1;
+    }
+
+    const byPerfil = new Map<string, number>();
+    for (const row of rows) {
+      if (!matchEstado(row, estado) || !matchFuente(row, fuente) || !matchTop(row, topMatches)) continue;
       for (const id of row.perfiles) {
         const key = id.toLowerCase();
         byPerfil.set(key, (byPerfil.get(key) ?? 0) + 1);
       }
+    }
+
+    const byFuente = new Map<string, number>();
+    let sinFuente = 0;
+    for (const row of rows) {
+      if (!matchEstado(row, estado) || !matchPerfil(row, perfil) || !matchTop(row, topMatches)) continue;
       if (row.fuente) byFuente.set(row.fuente, (byFuente.get(row.fuente) ?? 0) + 1);
       else sinFuente += 1;
     }
-    return { todas: rows.length, capturadas, postuladas, top, byState, byPerfil, byFuente, sinFuente };
-  }, [rows]);
 
-  const stateFilters = useMemo(() => {
-    const extras = CONTRACT_STATES.filter((state) => (counts.byState.get(state) ?? 0) > 0);
-    return [...ESTADO_FILTERS, ...extras];
-  }, [counts]);
+    let top = 0;
+    for (const row of rows) {
+      if (!matchEstado(row, estado) || !matchPerfil(row, perfil) || !matchFuente(row, fuente)) continue;
+      if ((row.matchScore ?? 0) >= TOP_MATCH) top += 1;
+    }
+
+    return {
+      todas: withoutEstado.length,
+      capturadas,
+      top,
+      byState,
+      byPerfil,
+      byFuente,
+      sinFuente
+    };
+  }, [rows, estado, perfil, fuente, topMatches]);
+
+  /**
+   * El sidebar de Estado es la lista fija del diseno aprobado (H0b): Todas ·
+   * Capturadas · Borrador · Enviadas · Confirmadas · Descartadas. Los conteos ya
+   * son facetados (H0a), asi que el numero de cada entrada es exactamente lo que
+   * devuelve la lista al activarla, incluso si es 0.
+   */
 
   const visible = useMemo(() => {
-    const filtered = rows.filter((row) => {
-      if (estado === 'capturadas' && row.application) return false;
-      if (estado === 'postuladas' && !row.application) return false;
-      if (
-        estado !== 'todas' &&
-        estado !== 'capturadas' &&
-        estado !== 'postuladas' &&
-        row.application?.estado !== estado
-      ) {
-        return false;
-      }
-      if (perfil && !row.perfiles.some((id) => id.toLowerCase() === perfil)) return false;
-      if (fuente === SIN_FUENTE && row.fuente) return false;
-      if (fuente && fuente !== SIN_FUENTE && row.fuente !== fuente) return false;
-      if (topMatches && (row.matchScore ?? 0) < TOP_MATCH) return false;
-      return true;
-    });
-    // Postuladas primero; dentro de cada grupo queda el orden natural (fecha desc).
-    return [...filtered.filter((row) => row.application), ...filtered.filter((row) => !row.application)];
+    const filtered = rows.filter(
+      (row) =>
+        matchEstado(row, estado) &&
+        matchPerfil(row, perfil) &&
+        matchFuente(row, fuente) &&
+        matchTop(row, topMatches)
+    );
+    // Orden default del feed: fecha de captura descendente, con el orden del read
+    // model (mismo dia: slug descendente) como desempate estable. Antes las
+    // postuladas se colaban primero y el feed no era directamente la cronologia.
+    return filtered;
   }, [rows, estado, perfil, fuente, topMatches]);
 
   const selected = visible.find((row) => row.slug === selectedSlug) ?? visible[0] ?? null;
@@ -144,7 +219,6 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
   const countForEstado = (filter: EstadoFilter): number => {
     if (filter === 'todas') return counts.todas;
     if (filter === 'capturadas') return counts.capturadas;
-    if (filter === 'postuladas') return counts.postuladas;
     return counts.byState.get(filter) ?? 0;
   };
 
@@ -190,79 +264,103 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
   return (
     <div className="of-shell">
       <aside className="of-side" aria-label="Filtros de ofertas">
-        <div className="of-sec">Estado</div>
-        {stateFilters.map((filter) => (
-          <button
-            key={filter}
-            type="button"
-            className={`of-item${estado === filter ? ' on' : ''}`}
-            aria-pressed={estado === filter}
-            onClick={() => setEstado(filter)}
-          >
-            <span>{labelForEstado(filter)}</span>
-            <span className="of-count">{countForEstado(filter)}</span>
-          </button>
-        ))}
-
-        <div className="of-sec">Perfil</div>
-        {positionings.map((positioning) => {
-          const key = positioning.id.toLowerCase();
-          const active = perfil === key;
-          return (
-            <button
-              key={positioning.id}
-              type="button"
-              className={`of-item${active ? ' on' : ''}`}
-              aria-pressed={active}
-              onClick={() => setPerfil(active ? null : key)}
-            >
-              <span>{positioning.title}</span>
-              <span className="of-count">{counts.byPerfil.get(key) ?? 0}</span>
-            </button>
-          );
-        })}
-        <button type="button" className="of-item muted" onClick={() => setProfileModalOpen(true)}>
-          <span>+ Agregar perfil</span>
-        </button>
-
-        <div className="of-sec">Fuente</div>
-        {sources.map((source) => {
-          const active = fuente === source.id;
-          return (
-            <button
-              key={source.id}
-              type="button"
-              className={`of-item${active ? ' on' : ''}`}
-              aria-pressed={active}
-              onClick={() => setFuente(active ? null : source.id)}
-            >
-              <span>{source.nombre}</span>
-              <span className="of-count">{counts.byFuente.get(source.id) ?? 0}</span>
-            </button>
-          );
-        })}
-        {counts.sinFuente > 0 && (
-          <button
-            type="button"
-            className={`of-item${fuente === SIN_FUENTE ? ' on' : ''}`}
-            aria-pressed={fuente === SIN_FUENTE}
-            onClick={() => setFuente(fuente === SIN_FUENTE ? null : SIN_FUENTE)}
-          >
-            <span>Sin vínculo</span>
-            <span className="of-count">{counts.sinFuente}</span>
-          </button>
-        )}
-
-        <div className="of-sec">Score</div>
-        <button
-          type="button"
-          className={`of-item${topMatches ? ' on' : ''}`}
-          aria-pressed={topMatches}
-          onClick={() => setTopMatches(!topMatches)}
+        <FilterGroup
+          id="estado"
+          title="Estado"
+          open={grupoAbierto('estado', estado !== 'todas')}
+          onToggle={() => toggleGrupo('estado')}
         >
-          <span>Top matches (&ge; {TOP_MATCH})</span>
-          <span className="of-count">{counts.top}</span>
-        </button>
+          {ESTADO_FILTERS.map((entry) => (
+            <button
+              key={entry.key}
+              type="button"
+              className={`of-item${estado === entry.key ? ' on' : ''}`}
+              aria-pressed={estado === entry.key}
+              onClick={() => setEstado(entry.key)}
+            >
+              <span>{entry.label}</span>
+              <span className="of-count">{countForEstado(entry.key)}</span>
+            </button>
+          ))}
+        </FilterGroup>
+
+        <FilterGroup
+          id="perfil"
+          title="Perfil"
+          open={grupoAbierto('perfil', perfil !== null)}
+          onToggle={() => toggleGrupo('perfil')}
+        >
+          {positionings.map((positioning) => {
+            const key = positioning.id.toLowerCase();
+            const active = perfil === key;
+            return (
+              <button
+                key={positioning.id}
+                type="button"
+                className={`of-item${active ? ' on' : ''}`}
+                aria-pressed={active}
+                onClick={() => setPerfil(active ? null : key)}
+              >
+                <span>{positioning.title}</span>
+                <span className="of-count">{counts.byPerfil.get(key) ?? 0}</span>
+              </button>
+            );
+          })}
+          <button type="button" className="of-item muted" onClick={() => setProfileModalOpen(true)}>
+            <span>+ Agregar perfil</span>
+          </button>
+        </FilterGroup>
+
+        <FilterGroup
+          id="fuente"
+          title="Fuente"
+          open={grupoAbierto('fuente', fuente !== null)}
+          onToggle={() => toggleGrupo('fuente')}
+        >
+          {sources.map((source) => {
+            const active = fuente === source.id;
+            return (
+              <button
+                key={source.id}
+                type="button"
+                className={`of-item${active ? ' on' : ''}`}
+                aria-pressed={active}
+                onClick={() => setFuente(active ? null : source.id)}
+              >
+                <span>{source.nombre}</span>
+                <span className="of-count">{counts.byFuente.get(source.id) ?? 0}</span>
+              </button>
+            );
+          })}
+          {counts.sinFuente > 0 && (
+            <button
+              type="button"
+              className={`of-item${fuente === SIN_FUENTE ? ' on' : ''}`}
+              aria-pressed={fuente === SIN_FUENTE}
+              onClick={() => setFuente(fuente === SIN_FUENTE ? null : SIN_FUENTE)}
+            >
+              <span>Sin vínculo</span>
+              <span className="of-count">{counts.sinFuente}</span>
+            </button>
+          )}
+        </FilterGroup>
+
+        <FilterGroup
+          id="score"
+          title="Score"
+          open={grupoAbierto('score', topMatches)}
+          onToggle={() => toggleGrupo('score')}
+        >
+          <button
+            type="button"
+            className={`of-item${topMatches ? ' on' : ''}`}
+            aria-pressed={topMatches}
+            onClick={() => setTopMatches(!topMatches)}
+          >
+            <span>Top matches (&ge; {TOP_MATCH})</span>
+            <span className="of-count">{counts.top}</span>
+          </button>
+        </FilterGroup>
       </aside>
 
       <div className="of-feed" aria-label="Ofertas">
@@ -500,6 +598,44 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
                       <p className="of-empty-line muted tiny">
                         Oferta capturada sin postular: no hay application.md en la carpeta.
                       </p>
+                    </div>
+                  )}
+                  {(selected.url || selected.urlAlternativas.length > 0) && (
+                    <div>
+                      <p className="of-tiny muted">Oferta publicada:</p>
+                      <div className="of-row">
+                        {selected.url && (
+                          <a
+                            className="btn secondary"
+                            href={selected.url}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            title={selected.url}
+                          >
+                            Abrir oferta
+                          </a>
+                        )}
+                        {selected.urlAlternativas.map((link, index) => (
+                          <a
+                            key={link.url}
+                            className="btn secondary"
+                            href={link.url}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            title={link.url}
+                          >
+                            Abrir alternativa
+                            {selected.urlAlternativas.length > 1 ? ` ${index + 1}` : ''}
+                          </a>
+                        ))}
+                      </div>
+                      {selected.urlAlternativas.map((link) =>
+                        link.nota ? (
+                          <p key={link.url} className="of-tiny muted">
+                            {link.nota}
+                          </p>
+                        ) : null
+                      )}
                     </div>
                   )}
                 </div>

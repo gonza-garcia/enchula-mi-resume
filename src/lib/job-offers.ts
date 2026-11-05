@@ -4,11 +4,24 @@ import { applicationSchema, type Application } from '../schemas/application';
 
 export type OfferState = 'agregada' | 'analizada' | 'adaptada';
 
+/**
+ * Link a la oferta publicada. `url_alternativa` puede aparecer repetido en el
+ * frontmatter (el contrato lo permite: son las otras URLs del mismo aviso que
+ * encuentra el chequeo de duplicados) y cada valor puede traer una nota despues
+ * de la URL, que se conserva como texto.
+ */
+export interface OfertaLink {
+  url: string;
+  nota: string | null;
+}
+
 export interface OfferMeta {
   empresa: string;
   rol: string;
   fecha: string;
   url: string | null;
+  /** Otras URLs del mismo aviso (`url_alternativa`, repetible en el frontmatter). */
+  urlAlternativas: OfertaLink[];
   modalidad: string;
   location: string | null;
   salario: string | null;
@@ -135,6 +148,27 @@ export function parsePerfilesField(value: string | undefined): string[] {
   return Array.from(new Set(ids));
 }
 
+/**
+ * Links `url_alternativa` del frontmatter: el contrato los permite repetidos (son
+ * las otras URLs del mismo aviso que encuentra el chequeo de duplicados) y cada
+ * valor puede traer una nota despues de la URL, entre parentesis o suelta. Un
+ * valor que no empieza con http no es link y se ignora.
+ */
+export function parseUrlAlternativas(raw: string): OfertaLink[] {
+  const block = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+  if (!block) return [];
+  const links: OfertaLink[] = [];
+  for (const line of block[1].split(/\r?\n/)) {
+    if (!/^url_alternativa\s*:/.test(line)) continue;
+    const value = line.slice(line.indexOf(':') + 1).trim();
+    const match = value.match(/^(\S+)(?:\s+(.*))?$/);
+    if (!match || !/^https?:\/\//i.test(match[1])) continue;
+    const nota = (match[2] ?? '').replace(/^\(/, '').replace(/\)$/, '').trim();
+    links.push({ url: match[1], nota: nota || null });
+  }
+  return links;
+}
+
 function metaFromOfferMd(slug: string, raw: string): OfferMeta {
   const fm = parseFrontmatter(raw);
   return {
@@ -142,6 +176,7 @@ function metaFromOfferMd(slug: string, raw: string): OfferMeta {
     rol: fm.rol || 'Unknown',
     fecha: fm.fecha || slug.slice(0, 10),
     url: fm.url && fm.url !== 'N/A' ? fm.url : null,
+    urlAlternativas: parseUrlAlternativas(raw),
     modalidad: fm.modalidad || 'unknown',
     location: fm.location || null,
     salario: fm.salario && fm.salario !== 'N/A' ? fm.salario : null,
@@ -165,9 +200,9 @@ function cleanFrontmatterValue(value: string | undefined): string | null {
 
 /**
  * Parsea y valida el `application.md` de una oferta (contrato de resultado de la
- * Fase F). Falla ruidosamente nombrando el archivo si el estado no es del contrato
- * o si falta el motivo de un veto o descarte. `fecha_envio` es alias legacy de
- * `fecha`.
+ * Fase F, con los 4 estados de la Fase H, ADR-0044). Falla ruidosamente nombrando
+ * el archivo si el estado no es del contrato o si falta el motivo de un descarte.
+ * `fecha_envio` es alias legacy de `fecha`.
  */
 export function parseApplicationFile(raw: string, source: string): Application {
   const fm = parseFrontmatter(raw);
@@ -254,7 +289,9 @@ export function listOffers(cwd: string = process.cwd()): OfferListing[] {
     });
   }
 
-  offers.sort((a, b) => b.slug.localeCompare(a.slug));
+  offers.sort(
+    (a, b) => b.meta.fecha.localeCompare(a.meta.fecha) || b.slug.localeCompare(a.slug)
+  );
   return offers;
 }
 

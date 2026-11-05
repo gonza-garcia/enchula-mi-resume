@@ -2,9 +2,9 @@ import { test, expect, type Page } from '@playwright/test';
 
 /**
  * Vista "Ofertas" (Fase F, variante D) contra el build demo: aurora-labs
- * (confirmada, score 85, perfiles frontend) y nimbus (vetada con motivo, score
- * 78, perfiles frontend + ai). Orden del feed: postuladas primero, fecha desc,
- * y dentro del mismo dia el slug desc -> [nimbus, aurora].
+ * (confirmada, score 85, perfiles frontend) y nimbus (descartada con motivo, score
+ * 78, perfiles frontend + ai). Orden del feed: fecha de captura descendente y,
+ * dentro del mismo dia, el slug descendente -> [nimbus, aurora].
  */
 
 const AURORA = '2026-10-05-aurora-labs-reactjs-frontend-developer';
@@ -21,15 +21,26 @@ function sidebarItem(page: Page, label: string) {
   return page.locator('.of-side .of-item').filter({ hasText: label });
 }
 
+function grupoDeFiltros(page: Page, titulo: string) {
+  return page.locator('.of-side .of-sec-toggle').filter({ hasText: titulo });
+}
+
+/** Abre un grupo del sidebar si está colapsado: un filtro oculto no es clickeable. */
+async function abrirGrupo(page: Page, titulo: string) {
+  const grupo = grupoDeFiltros(page, titulo);
+  if ((await grupo.getAttribute('aria-expanded')) !== 'true') await grupo.click();
+}
+
 test.describe('Ofertas: variante D como producto', () => {
   test('sidebar de filtros con counts del contrato, perfiles y top matches', async ({ page }) => {
     await gotoOfertas(page);
     const counts: Array<[string, string]> = [
       ['Todas', '2'],
       ['Capturadas', '0'],
-      ['Postuladas', '2'],
-      ['Confirmada', '1'],
-      ['Vetada', '1'],
+      ['Borrador', '0'],
+      ['Enviadas', '0'],
+      ['Confirmadas', '1'],
+      ['Descartadas', '1'],
       ['Frontend Developer', '2'],
       ['AI Developer', '1'],
       ['Top matches', '1']
@@ -37,6 +48,106 @@ test.describe('Ofertas: variante D como producto', () => {
     for (const [label, count] of counts) {
       await expect(sidebarItem(page, label).locator('.of-count')).toHaveText(count);
     }
+  });
+
+  test('H0a: los conteos son facetados y describen la lista bajo los demas filtros', async ({
+    page
+  }) => {
+    await gotoOfertas(page);
+    // "AI Developer" deja solo a nimbus (descartada, score 78): los conteos de
+    // Estado tienen que reacomodarse o la lista deja de coincidir con el sidebar.
+    await sidebarItem(page, 'AI Developer').click();
+    await expect(page.locator('.of-card')).toHaveCount(1);
+    await expect(sidebarItem(page, 'Todas').locator('.of-count')).toHaveText('1');
+    await expect(sidebarItem(page, 'Capturadas').locator('.of-count')).toHaveText('0');
+    await expect(sidebarItem(page, 'Borrador').locator('.of-count')).toHaveText('0');
+    await expect(sidebarItem(page, 'Enviadas').locator('.of-count')).toHaveText('0');
+    await expect(sidebarItem(page, 'Confirmadas').locator('.of-count')).toHaveText('0');
+    await expect(sidebarItem(page, 'Descartadas').locator('.of-count')).toHaveText('1');
+    // nimbus tiene 78: fuera del corte de Top matches bajo este perfil.
+    await abrirGrupo(page, 'Score');
+    await expect(sidebarItem(page, 'Top matches').locator('.of-count')).toHaveText('0');
+  });
+
+  test('H0a/H0b: el numero de cada filtro de Estado es exactamente lo que devuelve la lista', async ({
+    page
+  }) => {
+    const estadoLabels = ['Todas', 'Capturadas', 'Borrador', 'Enviadas', 'Confirmadas', 'Descartadas'];
+    // Varias combinaciones de los otros filtros: la invariante tiene que valer
+    // siempre, no solo con el sidebar en su estado inicial (era ahi donde se
+    // rompia el 4-nov: cuenta positiva con lista vacia).
+    const contextos: Array<(page: Page) => Promise<void>> = [
+      async () => {},
+      async (p) => {
+        await abrirGrupo(p, 'Score');
+        await sidebarItem(p, 'Top matches').click();
+      },
+      async (p) => {
+        await sidebarItem(p, 'Frontend Developer').click();
+      },
+      async (p) => {
+        await sidebarItem(p, 'AI Developer').click();
+      },
+      async (p) => {
+        await sidebarItem(p, 'AI Developer').click();
+        await abrirGrupo(p, 'Score');
+        await sidebarItem(p, 'Top matches').click();
+      }
+    ];
+    for (const contexto of contextos) {
+      await gotoOfertas(page);
+      await contexto(page);
+      for (const label of estadoLabels) {
+        const item = sidebarItem(page, label);
+        const count = Number(await item.locator('.of-count').textContent());
+        await item.click();
+        await expect(page.locator('.of-card')).toHaveCount(count);
+        if (count > 0) await expect(page.locator('.of-empty')).toHaveCount(0);
+      }
+    }
+  });
+
+  test('H0a: top matches acota los conteos de perfil, fuente y estado', async ({ page }) => {
+    await gotoOfertas(page);
+    // Top matches deja solo a aurora (confirmada, score 85, fuente demo-job-board).
+    await abrirGrupo(page, 'Score');
+    await sidebarItem(page, 'Top matches').click();
+    await expect(page.locator('.of-card')).toHaveCount(1);
+    await expect(sidebarItem(page, 'Todas').locator('.of-count')).toHaveText('1');
+    await expect(sidebarItem(page, 'Capturadas').locator('.of-count')).toHaveText('0');
+    await expect(sidebarItem(page, 'Borrador').locator('.of-count')).toHaveText('0');
+    await expect(sidebarItem(page, 'Enviadas').locator('.of-count')).toHaveText('0');
+    await expect(sidebarItem(page, 'Confirmadas').locator('.of-count')).toHaveText('1');
+    await expect(sidebarItem(page, 'Descartadas').locator('.of-count')).toHaveText('0');
+    await expect(sidebarItem(page, 'AI Developer').locator('.of-count')).toHaveText('0');
+    await expect(sidebarItem(page, 'Frontend Developer').locator('.of-count')).toHaveText('1');
+  });
+
+  test('H0c: los grupos de filtros del sidebar son colapsables', async ({ page }) => {
+    await gotoOfertas(page);
+    // Estado y Perfil arrancan abiertos (los filtros de todos los dias); Fuente y
+    // Score, colapsados (el listado de fuentes es largo y el corte de score es un
+    // solo toggle).
+    await expect(grupoDeFiltros(page, 'Estado')).toHaveAttribute('aria-expanded', 'true');
+    await expect(grupoDeFiltros(page, 'Perfil')).toHaveAttribute('aria-expanded', 'true');
+    await expect(grupoDeFiltros(page, 'Fuente')).toHaveAttribute('aria-expanded', 'false');
+    await expect(grupoDeFiltros(page, 'Score')).toHaveAttribute('aria-expanded', 'false');
+
+    // Colapsar un grupo oculta sus filtros y volver a abrirlo los muestra.
+    await grupoDeFiltros(page, 'Estado').click();
+    await expect(grupoDeFiltros(page, 'Estado')).toHaveAttribute('aria-expanded', 'false');
+    await expect(sidebarItem(page, 'Todas')).toBeHidden();
+    await grupoDeFiltros(page, 'Estado').click();
+    await expect(sidebarItem(page, 'Todas')).toBeVisible();
+
+    // Un grupo con un filtro activo se fuerza abierto: un filtro puesto nunca
+    // queda oculto, por mas que se intente colapsar el grupo.
+    await grupoDeFiltros(page, 'Score').click();
+    await sidebarItem(page, 'Top matches').click();
+    await grupoDeFiltros(page, 'Score').click();
+    await expect(grupoDeFiltros(page, 'Score')).toHaveAttribute('aria-expanded', 'true');
+    await expect(sidebarItem(page, 'Top matches')).toBeVisible();
+    await expect(sidebarItem(page, 'Top matches')).toHaveAttribute('aria-pressed', 'true');
   });
 
   test('cards compactas: score, rol-empresa, estado/fecha/ATS, chips y 1 linea de motivo', async ({
@@ -50,7 +161,7 @@ test.describe('Ofertas: variante D como producto', () => {
     await expect(nimbus).toContainText('Senior Frontend Engineer');
     await expect(nimbus).toContainText('Nimbus Software');
     await expect(nimbus.locator('.of-score')).toHaveText('78');
-    await expect(nimbus.locator('.of-badge')).toHaveText('vetada');
+    await expect(nimbus.locator('.of-badge')).toHaveText('descartada');
     await expect(nimbus.locator('.of-clamp')).toContainText('veto del usuario');
     await expect(nimbus.locator('.chip').filter({ hasText: /^remote$/ })).toHaveCount(1);
     await expect(nimbus.locator('.chip').filter({ hasText: /^AI Developer$/ })).toHaveCount(1);
@@ -97,10 +208,10 @@ test.describe('Ofertas: variante D como producto', () => {
     await expect(page.locator('.of-pane')).toContainText('Sin cover-letter.md en la carpeta de la oferta.');
   });
 
-  test('vista Postulacion de una vetada: estado, motivo y sin documentos', async ({ page }) => {
+  test('vista Postulacion de una descartada: estado, motivo y sin documentos', async ({ page }) => {
     await gotoOfertas(page);
     await page.locator('.of-segmented [role="tab"]').nth(3).click();
-    await expect(page.locator('.of-pane .of-badge')).toHaveText('vetada');
+    await expect(page.locator('.of-pane .of-badge')).toHaveText('descartada');
     await expect(page.locator('.of-pane')).toContainText(
       'La vacante exige reubicacion y guardias on-call obligatorias: veto del usuario.'
     );
@@ -122,6 +233,29 @@ test.describe('Ofertas: variante D como producto', () => {
     await expect(
       page.locator('.of-pane .chip').filter({ hasText: /^Montiel Ariana - Cover Letter - EN\.pdf$/ })
     ).toHaveCount(1);
+  });
+
+  test('H0c: la vista Postulacion enlaza la oferta publicada (url y url_alternativa)', async ({
+    page
+  }) => {
+    await gotoOfertas(page);
+    // nimbus es la primera del feed y trae url + url_alternativa con nota.
+    await page.locator('.of-segmented [role="tab"]').nth(3).click();
+    const links = page.locator('.of-pane a.btn');
+    await expect(links).toHaveCount(2);
+    await expect(links.nth(0)).toHaveText('Abrir oferta');
+    await expect(links.nth(0)).toHaveAttribute(
+      'href',
+      'https://careers.nimbus-software.example/roles/senior-frontend-engineer'
+    );
+    await expect(links.nth(0)).toHaveAttribute('target', '_blank');
+    await expect(links.nth(1)).toHaveText('Abrir alternativa');
+    await expect(links.nth(1)).toHaveAttribute('href', 'https://jobs.nimbus-software.example/postings/8842');
+    // la nota del frontmatter se conserva como texto
+    await expect(page.locator('.of-pane')).toContainText('mismo aviso, publicacion duplicada');
+    // aurora no tiene url publicada: el bloque no se dibuja
+    await page.locator('.of-card').nth(1).click();
+    await expect(page.locator('.of-pane a.btn')).toHaveCount(0);
   });
 
   test('menu de tres puntos: Cargar repaso apunta al deep link de Prep entrevistas', async ({
@@ -189,12 +323,15 @@ test.describe('Ofertas: variante D como producto', () => {
 
   test('filtro Fuente: acota por la fuente de captura (Fase G)', async ({ page }) => {
     await gotoOfertas(page);
+    await abrirGrupo(page, 'Fuente');
     await sidebarItem(page, 'Demo Job Board').click();
     await expect(page.locator('.of-card')).toHaveCount(1);
     await expect(page.locator('.of-card')).toContainText('Aurora Labs');
     await sidebarItem(page, 'Demo Job Board').click();
     await expect(page.locator('.of-card')).toHaveCount(2);
 
+    // Al quedar sin filtro activo el grupo vuelve a colapsarse.
+    await abrirGrupo(page, 'Fuente');
     await sidebarItem(page, 'Demo Curated Spreadsheet').click();
     await expect(page.locator('.of-card')).toHaveCount(1);
     await expect(page.locator('.of-card')).toContainText('Nimbus Software');
@@ -218,6 +355,7 @@ test.describe('Ofertas: variante D como producto', () => {
 
   test('filtro Top matches (>= 80) deja solo el score alto', async ({ page }) => {
     await gotoOfertas(page);
+    await abrirGrupo(page, 'Score');
     await sidebarItem(page, 'Top matches').click();
     await expect(page.locator('.of-card')).toHaveCount(1);
     await expect(page.locator('.of-card')).toContainText('Aurora Labs');

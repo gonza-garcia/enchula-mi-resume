@@ -189,22 +189,24 @@ pegar y guardar después, con el mismo destino.
 - El diálogo de PDF sugiere el nombre neutro del ADR-0036 en ambas tabs, y los exports
   actúan sobre el documento activo resuelto por tab.
 
-### Página "Ofertas" y contrato de postulación (ADR-0042)
+### Página "Ofertas" y contrato de postulación (ADR-0042 y ADR-0044)
 
 - `/ofertas` es la vista de resultados del pipeline (variante D): sidebar de filtros
-  (Estado: Todas / Capturadas / Postuladas + estados del contrato con counts; Perfil con
-  toggle multi-perfil y "+ Agregar perfil" con puente de prompts a `build-profile`; Top
-  matches con score ≥ 80), cards compactas (score, `rol - empresa`, estado/fecha/ATS,
-  chips de metadata y 1 línea de motivo o confirmación) y visor con segmented de 4 vistas
-  (Oferta original / CV adaptado / Cover letter / Postulación) y menú de tres puntos
-  ("Cargar repaso", que navega a `/interview/?repaso=<slug>`, y "Descargar", que baja el
-  archivo de la vista activa).
+  (Estado: **Todas / Capturadas / Borrador / Enviadas / Confirmadas / Descartadas**, con
+  counts facetados — el número de cada filtro es exactamente lo que devuelve la lista al
+  activarlo; Perfil con toggle multi-perfil y "+ Agregar perfil" con puente de prompts a
+  `build-profile`; Top matches con score ≥ 80), cards compactas (score, `rol -
+  empresa`, estado/fecha/ATS, chips de metadata y 1 línea de motivo o confirmación) y
+  visor con segmented de 4 vistas (Oferta original / CV adaptado / Cover letter /
+  Postulación) y menú de tres puntos ("Cargar repaso", que navega a
+  `/interview/?repaso=<slug>`, y "Descargar", que baja el archivo de la vista activa).
 - `docs/job-offers/<slug>/application.md` es el contrato de resultado de una postulación
   (frontmatter validado con Zod): requeridos `empresa`, `rol`, `fecha` (alias legacy
-  `fecha_envio`) y `estado` (`borrador | en preparacion | enviada | confirmada | vetada |
-  descartada`, con `motivo` obligatorio en vetada/descartada); opcionales `ats`,
-  `confirmacion`, `cv_enviado`, `cover_enviado`, `outcome` y `outcome_fecha`. El parser
-  tolera alias y campos ausentes pero falla en build nombrando el archivo.
+  `fecha_envio`) y `estado` (`borrador | enviada | confirmada | descartada`, con
+  `motivo` obligatorio solo en `descartada`; los legacy `en preparacion` y `vetada` los
+  funden `borrador` y `descartada`, ADR-0044); opcionales `ats`, `confirmacion`,
+  `cv_enviado`, `cover_enviado`, `outcome` y `outcome_fecha`. El parser tolera alias y
+  campos ausentes pero falla en build nombrando el archivo.
 - El frontmatter de `offer.md` puede llevar `perfiles: frontend, ai`: ids de los
   posicionamientos del perfil a los que apunta la oferta, dato declarado, opcional y
   multi-perfil (una oferta puede apuntar a varios perfiles).
@@ -301,6 +303,8 @@ están en `docs/deploy.md`.
 | 0040 | Vigente | "Mis CVs": fusión de `/` y `/adapted` con tabs y navbar consistente |
 | 0041 | Vigente | Gates de `/learning` con evidencia citada, sin estado inventado |
 | 0042 | Vigente | Contrato de postulación (`application.md`) y UI de resultados |
+| 0043 | Vigente | Fuentes y barridos del pipeline de búsqueda |
+| 0044 | Vigente | Estados de la postulación a cuatro (`borrador · enviada · confirmada · descartada`) |
 
 Los ADRs personales (decisiones del CV y hosting de las apps personales) están en
 el repo privado de planning y son legado suyo. Los ADRs históricos se conservan como
@@ -650,3 +654,27 @@ contexto y no contradecir las decisiones vigentes de este README.
   internos de las herramientas se actualizan a los nombres nuevos. Sin cambios de
   superficie de producto más allá de un documento de diseño rescatado: esta entrada viaja
   al repo público en el próximo sync.
+- 5 nov 2026: **Fase H arranca: los conteos de `/ofertas` describen la lista y los
+  estados de la postulación quedan en cuatro** (H0a + H0b). El bug de conteos del 4-nov
+  ("Todas 64" con 12 cards a la vista, filtros con cuenta positiva y lista vacía) tenía la
+  causa en que los conteos del sidebar se calculaban sobre todas las filas mientras la
+  lista aplicaba los filtros de perfil, fuente y Top matches: hoy los conteos son
+  **facetados**, con los mismos predicados que la lista, y el número de cada filtro es
+  exactamente lo que devuelve al activarlo (ADR de proceso: la repro y el diagnóstico
+  quedan en `docs/planning/roadmap-fases.md`). La postulación pasa a cuatro estados
+  (`borrador | enviada | confirmada | descartada`, ADR-0044): `borrador` funde el legacy
+  `en preparacion` y `descartada` funde el legacy `vetada` (con `motivo` obligatorio solo
+  en `descartada`), con backfill de los `application.md` reales y filtros de `/ofertas`
+  sin el paraguas "Postuladas" (Todas · Capturadas · Borrador · Enviadas · Confirmadas ·
+  Descartadas). Verificación en verde: 343 tests.
+- 5 nov 2026 (Fase H, H0c): **quick wins de la vista "Ofertas"**. La vista
+  Postulación enlaza la oferta publicada (`url` y `url_alternativa`, esta última
+  repetible por contrato y con su nota), el feed queda con orden default de fecha
+  descendente (sin colar las postuladas primero), el tip del header se retira
+  (explicaba el flujo de export que la Fase H retira) y los grupos del sidebar de
+  filtros quedan colapsables (Estado y Perfil abiertos, Fuente y Score
+  colapsados; un grupo con filtro activo se fuerza abierto). Se corrige también
+  el mojibake del verbatim en portugués: era UTF-8 leído como CP1252 guardado
+  tal cual por la captura (un archivo, 80 secuencias), no el renderizador ni las
+  reglas de limpieza; ahora hay test que falla nombrando el archivo y una regla
+  de codificación en `capture-job-offer`. Verificación en verde: 353 tests.

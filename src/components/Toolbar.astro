@@ -18,7 +18,6 @@ interface Props {
   pdfTitle: string;
   exportItems?: ExportItem[];
   showTheme?: boolean;
-  tip?: string;
   showLang?: boolean;
 }
 
@@ -33,7 +32,6 @@ const {
     { value: 'linkedin', label: 'LinkedIn Sections' }
   ],
   showTheme = false,
-  tip = '',
   showLang = true
 } = Astro.props;
 
@@ -94,9 +92,6 @@ const buildNotice = import.meta.env.DEV
         </div>
       </div>
     </details>
-  )}
-  {tip && (
-    <span class="contactline" style="margin:0;font-size:9pt">{tip}</span>
   )}
   {buildNotice && (
     <span class="build-notice" role="status" data-build-notice={buildNotice.key}>
