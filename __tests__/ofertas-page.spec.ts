@@ -198,6 +198,78 @@ test.describe('Ofertas: variante D como producto', () => {
     await expect(page).toHaveURL(new RegExp(`oferta=${NIMBUS}`));
   });
 
+  test('H2c: layout fluido y visor al ancho del CV de Mis Perfiles', async ({ page }) => {
+    await page.setViewportSize({ width: 1500, height: 900 });
+    await gotoOfertas(page);
+    // Sin tope de ancho: el shell ocupa el viewport.
+    const shell = await page.locator('.of-shell').boundingBox();
+    if (!shell) throw new Error('sin bounding box del shell');
+    expect(shell.width).toBeGreaterThan(1300);
+
+    // El visor mide lo mismo que la hoja del CV de "/" (8.5in).
+    await page.goto('/');
+    const hoja = await page.locator('.page').boundingBox();
+    if (!hoja) throw new Error('sin bounding box de la hoja del CV');
+    await gotoOfertas(page);
+    const visor = await page.locator('.of-viewer').boundingBox();
+    if (!visor) throw new Error('sin bounding box del visor');
+    expect(Math.round(visor.width)).toBe(Math.round(hoja.width));
+  });
+
+  test('H2c: en viewport chico el layout queda apilado', async ({ page }) => {
+    await page.setViewportSize({ width: 800, height: 900 });
+    await gotoOfertas(page);
+    const feed = await page.locator('.of-feed').boundingBox();
+    const visor = await page.locator('.of-viewer').boundingBox();
+    if (!feed || !visor) throw new Error('sin bounding box de los paneles');
+    // Una sola columna: el visor ocupa casi todo el ancho y va debajo del feed.
+    expect(visor.width).toBeGreaterThan(700);
+    expect(visor.y).toBeGreaterThan(feed.y + feed.height - 1);
+  });
+
+  test('H2d: el splitter del visor redimensiona con drag y el ancho persiste', async ({ page }) => {
+    await page.setViewportSize({ width: 1500, height: 900 });
+    await gotoOfertas(page);
+    const antes = await page.locator('.of-viewer').boundingBox();
+    const handle = await page.locator('[data-split="viewer"]').boundingBox();
+    if (!antes || !handle) throw new Error('sin bounding box del visor o del handle');
+    await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(handle.x + handle.width / 2 - 120, handle.y + handle.height / 2, { steps: 5 });
+    await page.mouse.up();
+    const despues = await page.locator('.of-viewer').boundingBox();
+    if (!despues) throw new Error('sin bounding box del visor');
+    expect(Math.round(despues.width)).toBeGreaterThan(Math.round(antes.width) + 100);
+
+    // El ancho elegido sobrevive la recarga (localStorage).
+    await page.reload();
+    await page.waitForFunction(
+      () => document.documentElement.getAttribute('data-ofertas-hydrated') === 'true'
+    );
+    const trasRecarga = await page.locator('.of-viewer').boundingBox();
+    if (!trasRecarga) throw new Error('sin bounding box del visor');
+    expect(Math.round(trasRecarga.width)).toBe(Math.round(despues.width));
+  });
+
+  test('H2d: las flechas del teclado redimensionan el panel de filtros', async ({ page }) => {
+    await page.setViewportSize({ width: 1500, height: 900 });
+    await gotoOfertas(page);
+    const antes = await page.locator('.of-side').boundingBox();
+    if (!antes) throw new Error('sin bounding box del sidebar');
+    await page.locator('[data-split="side"]').focus();
+    await page.keyboard.press('ArrowRight');
+    const despues = await page.locator('.of-side').boundingBox();
+    if (!despues) throw new Error('sin bounding box del sidebar');
+    expect(Math.round(despues.width)).toBe(Math.round(antes.width) + 16);
+  });
+
+  test('H2d: en viewport chico no hay splitters', async ({ page }) => {
+    await page.setViewportSize({ width: 800, height: 900 });
+    await gotoOfertas(page);
+    await expect(page.locator('[data-split="side"]')).toBeHidden();
+    await expect(page.locator('[data-split="viewer"]')).toBeHidden();
+  });
+
   test('el segmented del visor tiene las 5 vistas', async ({ page }) => {
     await gotoOfertas(page);
     const tabs = page.locator('.of-segmented [role="tab"]');
@@ -368,22 +440,6 @@ test.describe('Ofertas: variante D como producto', () => {
     await sidebarItem(page, 'Demo Curated Spreadsheet').click();
     await expect(page.locator('.of-card')).toHaveCount(1);
     await expect(page.locator('.of-card')).toContainText('Nimbus Software');
-  });
-
-  test('seccion Barridos: historial con numeros, detalle de vacantes y particularidades', async ({
-    page
-  }) => {
-    await gotoOfertas(page);
-    const sweeps = page.locator('.of-sweeps');
-    await expect(sweeps.locator('> summary')).toContainText('Barridos');
-    await expect(sweeps.locator('> summary')).toContainText('1 registrado - ultimo 2026-10-05');
-    await sweeps.locator('> summary').click();
-    await expect(sweeps.locator('.of-sweep')).toHaveCount(1);
-    await expect(sweeps).toContainText('descartadas: 1');
-    await expect(sweeps).toContainText('Ficticia Corp - Staff Frontend Engineer');
-    await expect(sweeps).toContainText('Nivel Staff sin experiencia suficiente');
-    await sweeps.locator('.of-sweep-notes > summary').click();
-    await expect(sweeps.locator('.of-sweep-notes')).toContainText('feed JSON del board demora');
   });
 
   test('filtro Top matches (>= 80) deja solo el score alto', async ({ page }) => {

@@ -18,9 +18,10 @@ forma parte del producto.
 - El contenido base tiene dos locales: `es` y `en`. La UI de las islas queda en español.
 - El sitio es Astro 7 (upgrade documentado en ADR-0020). "Mis perfiles" (`/`) muestra el
   CV base canónico imprimible (estático vanilla) con su sidebar de perfil, idioma y tema;
-  `/ofertas` es la vista de resultados del pipeline con el visor de documentos (Oferta
-  original · Match report · CV adaptado · Cover letter · Postulación) y `/interview` y
-  `/learning` son islas React (ADR-0024, ADR-0029 y ADR-0042). La navbar de 5 destinos
+  `/ofertas` es la vista de resultados del pipeline, con layout fluido de paneles
+  redimensionables (Fase H2) y el visor de documentos (Oferta original · Match report ·
+  CV adaptado · Cover letter · Postulación), y `/interview` y `/learning` son islas React
+  (ADR-0024, ADR-0029 y ADR-0042). La navbar de 5 destinos
   ("Mis perfiles", "Ofertas", "Fuentes", "Prep entrevistas" y "Plan de estudios") es la
   misma en todas las páginas y se estila como links con subrayado (ADR-0040 y ADR-0042).
 - `/interview` publica el banco de prep de entrevistas en inglés, con filtros por área, nivel,
@@ -47,7 +48,9 @@ forma parte del producto.
 - El pipeline de búsqueda tiene su contrato (ADR-0043): fuentes de cualquier tipo con su
   playbook de extracción (`docs/job-search/sources/`), barridos registrados con ids
   estables por vacante, estados y descartes con motivo (`docs/job-search/sweeps/`) y la
-  página `/fuentes` mostrando el catálogo, su historial de ofertas y sus stats. Las
+  página `/fuentes` con el catálogo en tarjetas colapsadas por defecto (header con chips
+  y stats visibles; playbook y ofertas al expandir), la sección "Barridos" con el
+  historial del pipeline y las ofertas por fuente con sus stats. Las
   ofertas capturadas se vinculan a su fuente y barrido por `fuente`/`barrido`/`id_vacante`
   en el frontmatter de `offer.md`. Los datos reales del pipeline son del usuario y nunca
   viajan al repo público.
@@ -195,6 +198,11 @@ decisión vigente de este README tienen prioridad sobre el texto histórico de u
   CV adaptado se renderiza con el mismo markup ATS v4 que el CV base, con la tipografía
   acotada al panel del visor (Fase H1), y el deep link canónico de una oferta es
   `/ofertas/?oferta=<slug>` (selección con la URL al día).
+- El layout de `/ofertas` es fluido, con dos splitters (sidebar ↔ feed y feed ↔ visor)
+  que redimensionan los paneles con drag o flechas del teclado (con clamps) y recuerdan
+  su ancho en localStorage; el visor arranca al ancho de la hoja del CV de "Mis perfiles"
+  y en viewport chico el layout queda apilado, sin splitters (Fase H2). La sección
+  "Barridos" del pipeline vive en `/fuentes`.
 - `docs/job-offers/<slug>/application.md` es el contrato de resultado de una postulación
   (frontmatter validado con Zod): requeridos `empresa`, `rol`, `fecha` (alias legacy
   `fecha_envio`) y `estado` (`borrador | enviada | confirmada | descartada`, con
@@ -692,3 +700,10 @@ contexto y no contradecir las decisiones vigentes de este README.
   ADR-0023 queda obsoleto (ADR-0045), y el export JSON y el nombre neutro del PDF
   (ADR-0036) quedan sin superficie hasta el diálogo "Descargar" de la H3. Verificación
   en verde: 292 tests.
+- 8 nov 2026 (Fase H, H2): **`/ofertas` fluido con paneles redimensionables y Barridos en
+  `/fuentes`**. El layout de `/ofertas` deja el tope de ancho y queda fluido, con el visor
+  por defecto al ancho de la hoja del CV de "Mis perfiles", dos splitters (sidebar y visor)
+  con drag y flechas del teclado, clamps y anchos persistidos en localStorage; en viewport
+  chico sigue apilado, sin splitters (H2c-H2d). La sección "Barridos" se muda a `/fuentes`
+  (H2a) y las tarjetas de fuente quedan colapsadas por defecto: header con chips y stats
+  visibles, playbook y ofertas al expandir (H2b). Verificación en verde: 298 tests.

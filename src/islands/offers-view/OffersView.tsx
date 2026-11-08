@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import type { EstadoFilter, OfferRow, OffersViewProps, ViewerView } from './contract';
 import { ESTADO_FILTERS, VIEWER_VIEWS } from './contract';
 import AdaptedCvView from './AdaptedCvView';
@@ -88,8 +88,34 @@ function FilterGroup({
 }
 
 /**
+ * Paneles redimensionables (Tanda H2d): anchos de panel en px, con clamps y
+ * persistencia en localStorage. 816px = 8.5in, el ancho de la hoja del CV de
+ * Mis Perfiles (Layout.astro): el default del visor es el ancho del CV.
+ */
+const SIDE_WIDTH_KEY = 'ofertas.sidebar-width';
+const VIEWER_WIDTH_KEY = 'ofertas.viewer-width';
+const SIDE_WIDTH = { min: 140, max: 320, def: 180 };
+const VIEWER_WIDTH = { min: 340, max: 1100, def: 816 };
+
+function clampWidth(limits: { min: number; max: number }, width: number): number {
+  return Math.min(limits.max, Math.max(limits.min, width));
+}
+
+function readStoredWidth(key: string, fallback: number): number {
+  try {
+    const raw = window.localStorage.getItem(key);
+    const value = raw === null ? NaN : Number(raw);
+    return Number.isFinite(value) ? value : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+type PanelId = 'side' | 'viewer';
+
+/**
  * Vista "Ofertas" (Fase F, variante D): sidebar de filtros, cards compactas y
- * visor a la derecha con las 4 vistas. La data llega ya leida del build (las
+ * visor a la derecha con las 5 vistas. La data llega ya leida del build (las
  * carpetas de docs/job-offers); aca solo se filtra y se muestra. Sin seguimiento
  * ni acciones de envio: el Submit de cualquier postulacion lo aprieta el usuario.
  */
@@ -114,6 +140,85 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
   const [view, setView] = useState<ViewerView>('oferta');
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // Paneles redimensionables (Tanda H2d): dos splitters (sidebar <-> feed y
+  // feed <-> visor) que mueven las vars --of-side-w / --of-viewer-w del shell,
+  // con clamps y persistencia en localStorage. Los anchos guardados se leen al
+  // montar (no en el render: el SSR no tiene localStorage). El ancho durante el
+  // drag se toma de la geometria renderizada, para que el handle siga al puntero
+  // aunque la columna este pisada por su minimo.
+  const sideRef = useRef<HTMLElement | null>(null);
+  const viewerRef = useRef<HTMLDivElement | null>(null);
+  const [panelWidths, setPanelWidths] = useState<Record<PanelId, number>>({
+    side: SIDE_WIDTH.def,
+    viewer: VIEWER_WIDTH.def
+  });
+  const [dragging, setDragging] = useState<PanelId | null>(null);
+  const dragRef = useRef<{ target: PanelId; startX: number; startWidth: number } | null>(null);
+
+  useEffect(() => {
+    setPanelWidths({
+      side: readStoredWidth(SIDE_WIDTH_KEY, SIDE_WIDTH.def),
+      viewer: readStoredWidth(VIEWER_WIDTH_KEY, VIEWER_WIDTH.def)
+    });
+  }, []);
+
+  const panelWidth = (target: PanelId): number => {
+    const el = target === 'side' ? sideRef.current : viewerRef.current;
+    return el ? el.getBoundingClientRect().width : 0;
+  };
+
+  const applyWidth = (target: PanelId, width: number, persist: boolean): void => {
+    const clamped = Math.round(clampWidth(target === 'side' ? SIDE_WIDTH : VIEWER_WIDTH, width));
+    setPanelWidths((prev) => ({ ...prev, [target]: clamped }));
+    if (persist) {
+      try {
+        window.localStorage.setItem(target === 'side' ? SIDE_WIDTH_KEY : VIEWER_WIDTH_KEY, String(clamped));
+      } catch {
+        /* sin localStorage no hay persistencia: los defaults siguen andando */
+      }
+    }
+  };
+
+  const widthForDrag = (
+    drag: { target: PanelId; startX: number; startWidth: number },
+    clientX: number
+  ): number => {
+    const delta = clientX - drag.startX;
+    // El visor se mide desde su borde izquierdo: mover el handle a la izquierda lo agranda.
+    return drag.target === 'side' ? drag.startWidth + delta : drag.startWidth - delta;
+  };
+
+  const startDrag = (target: PanelId) => (event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    dragRef.current = { target, startX: event.clientX, startWidth: panelWidth(target) };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDragging(target);
+  };
+
+  const moveDrag = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    applyWidth(drag.target, widthForDrag(drag, event.clientX), false);
+  };
+
+  const endDrag = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    dragRef.current = null;
+    setDragging(null);
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    applyWidth(drag.target, widthForDrag(drag, event.clientX), true);
+  };
+
+  // Las flechas redimensionan el panel controlado: derecha = mas ancho
+  // (aria-valuenow es ese ancho), Shift multiplica el paso por 3.
+  const onSplitterKey = (target: PanelId) => (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    const step = (event.shiftKey ? 48 : 16) * (event.key === 'ArrowRight' ? 1 : -1);
+    applyWidth(target, panelWidth(target) + step, true);
+  };
 
   useEffect(() => {
     // data-ofertas-hydrated: sin esto, interactuar antes de hidratar pierde los clicks.
@@ -281,9 +386,39 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
     URL.revokeObjectURL(url);
   };
 
+  // Handle de resize entre dos paneles (Tanda H2d): separador vertical
+  // focusable, con drag (pointer capture) y flechas del teclado.
+  const renderSplitter = (target: PanelId, label: string) => (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={label}
+      aria-controls={target === 'side' ? 'of-side' : 'of-viewer'}
+      aria-valuenow={panelWidths[target]}
+      aria-valuemin={target === 'side' ? SIDE_WIDTH.min : VIEWER_WIDTH.min}
+      aria-valuemax={target === 'side' ? SIDE_WIDTH.max : VIEWER_WIDTH.max}
+      tabIndex={0}
+      className={`of-splitter${dragging === target ? ' dragging' : ''}`}
+      data-split={target}
+      onPointerDown={startDrag(target)}
+      onPointerMove={moveDrag}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
+      onKeyDown={onSplitterKey(target)}
+    />
+  );
+
   return (
-    <div className="of-shell">
-      <aside className="of-side" aria-label="Filtros de ofertas">
+    <div
+      className="of-shell"
+      style={
+        {
+          '--of-side-w': `${panelWidths.side}px`,
+          '--of-viewer-w': `${panelWidths.viewer}px`
+        } as CSSProperties
+      }
+    >
+      <aside className="of-side" id="of-side" ref={sideRef} aria-label="Filtros de ofertas">
         <FilterGroup
           id="estado"
           title="Estado"
@@ -380,6 +515,8 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
         </FilterGroup>
       </aside>
 
+      {renderSplitter('side', 'Redimensionar el panel de filtros')}
+
       <div className="of-feed" aria-label="Ofertas">
         {visible.length === 0 ? (
           <div className="of-empty">
@@ -446,7 +583,9 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
         )}
       </div>
 
-      <div className="of-viewer">
+      {renderSplitter('viewer', 'Redimensionar el visor')}
+
+      <div className="of-viewer" id="of-viewer" ref={viewerRef}>
         {selected ? (
           <>
             <div className="of-viewer-head">

@@ -3,9 +3,11 @@
  * "Fuentes" (Fase G, ADR-0043): el catalogo de fuentes de busqueda del pipeline.
  * Por fuente: tipo, playbook resumido (como buscar, herramientas, quirks),
  * ofertas historicas salidas de ahi y stats (ultimo barrido, capturadas,
- * descartadas). La data viene de docs/job-search con el read model; en build
- * generico solo entran fuentes demo (ADR-0033). Los barridos reales son dato
- * del usuario y nunca viajan al staging ni al repo publico.
+ * descartadas). Cada tarjeta esta colapsada por defecto (Tanda H2): se ve el
+ * header con sus chips y las stats, y al expandir el playbook y las ofertas.
+ * La data viene de docs/job-search con el read model; en build generico solo
+ * entran fuentes demo (ADR-0033). Los barridos reales son dato del usuario y
+ * nunca viajan al staging ni al repo publico.
  */
 import Layout from '../layouts/Layout.astro';
 import SiteNav from '../components/SiteNav.astro';
@@ -18,6 +20,7 @@ const { profile } = loadProfile();
 const sources = listSources();
 const sweeps = listSweeps();
 const rows = listOffers();
+const sourceName = (id: string) => sources.find((source) => source.id === id)?.nombre ?? id;
 
 const statsFor = (sourceId: string) => {
   const capturadas = rows.filter((listing) => listing.meta.fuente === sourceId);
@@ -54,8 +57,8 @@ const statsFor = (sourceId: string) => {
     {sources.map((source) => {
       const stats = statsFor(source.id);
       return (
-        <article class="fuente-card" id={`fuente-${source.id}`}>
-          <header class="fuente-head">
+        <details class="fuente-card" id={`fuente-${source.id}`}>
+          <summary class="fuente-head">
             <h2>{source.nombre}</h2>
             <span class="chip">{source.tipo}</span>
             {source.prioridad && <span class="chip fuente-prio">prioritaria</span>}
@@ -66,13 +69,22 @@ const statsFor = (sourceId: string) => {
             {source.url && (
               <a class="fuente-url" href={source.url} target="_blank" rel="noreferrer">{source.url}</a>
             )}
-          </header>
-
-          <dl class="fuente-stats">
-            <div><dt>Último barrido</dt><dd>{stats.ultimoBarrido ?? 'sin barridos'}</dd></div>
-            <div><dt>Ofertas capturadas</dt><dd>{stats.capturadas.length}</dd></div>
-            <div><dt>Vacantes descartadas</dt><dd>{stats.descartadas}</dd></div>
-          </dl>
+            <span class="fuente-chevron" aria-hidden="true">›</span>
+            <span class="fuente-stats">
+              <span class="fuente-stat">
+                <span class="fuente-stat-label">Último barrido</span>
+                <span class="fuente-stat-value">{stats.ultimoBarrido ?? 'sin barridos'}</span>
+              </span>
+              <span class="fuente-stat">
+                <span class="fuente-stat-label">Ofertas capturadas</span>
+                <span class="fuente-stat-value">{stats.capturadas.length}</span>
+              </span>
+              <span class="fuente-stat">
+                <span class="fuente-stat-label">Vacantes descartadas</span>
+                <span class="fuente-stat-value">{stats.descartadas}</span>
+              </span>
+            </span>
+          </summary>
 
           <section class="fuente-playbook">
             <h3>Cómo actuar</h3>
@@ -105,7 +117,7 @@ const statsFor = (sourceId: string) => {
               </ul>
             )}
           </section>
-        </article>
+        </details>
       );
     })}
 
@@ -114,6 +126,73 @@ const statsFor = (sourceId: string) => {
         Sin fuentes configuradas. Se registran en <code>docs/job-search/sources/</code>
         (una por archivo, con su playbook).
       </p>
+    )}
+
+    {/* Barridos (Fase G, movido a /fuentes en la Tanda H2): historial del
+        pipeline de busqueda. Colapsado por defecto: el detalle vive aca y las
+        ofertas capturadas en su tarjeta de fuente. */}
+    {sweeps.length > 0 && (
+      <details class="sweeps">
+        <summary>
+          Barridos
+          <span class="muted tiny">
+            {sweeps.length} registrado{sweeps.length === 1 ? '' : 's'} - ultimo {sweeps[0].fecha}
+          </span>
+        </summary>
+        <div class="sweeps-body">
+          {sweeps.map((sweep) => (
+            <article class="sweep">
+              <header class="sweep-head">
+                <strong>{sweep.fecha}</strong>
+                <span class="muted tiny">{sweep.id}</span>
+                <span class="sweep-chips">
+                  {sweep.fuentes.map((entry) => (
+                    <span class="chip">{sourceName(entry.sourceId)}</span>
+                  ))}
+                </span>
+              </header>
+              <p class="sweep-chips">
+                <span class="chip">nuevas: {sweep.vacantes.filter((v) => v.estado === 'nueva').length}</span>
+                <span class="chip">capturadas: {sweep.capturadas.length}</span>
+                <span class="chip">
+                  ya postuladas: {sweep.vacantes.filter((v) => v.estado === 'ya postulada').length}
+                </span>
+                <span class="chip">
+                  descartadas: {sweep.vacantes.filter((v) => v.estado === 'descartada').length}
+                </span>
+              </p>
+              <ul class="sweep-vacantes">
+                {sweep.vacantes.map((vacante) => (
+                  <li>
+                    <span class={`of-badge ${
+                      vacante.estado === 'descartada'
+                        ? 'of-badge-descartada'
+                        : vacante.estado === 'ya postulada'
+                          ? 'of-badge-enviada'
+                          : vacante.estado === 'capturada'
+                            ? 'of-badge-confirmada'
+                            : 'of-badge-borrador'
+                    }`}>{vacante.estado}</span>
+                    {vacante.empresa ? `${vacante.empresa} - ` : ''}
+                    {vacante.titulo}
+                    {vacante.motivo && <span class="muted"> — {vacante.motivo}</span>}
+                  </li>
+                ))}
+              </ul>
+              {sweep.particularidades.length > 0 && (
+                <details class="sweep-notes">
+                  <summary>Particularidades del proceso</summary>
+                  <ul>
+                    {sweep.particularidades.map((nota) => (
+                      <li>{nota}</li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </article>
+          ))}
+        </div>
+      </details>
     )}
   </main>
 </Layout>
@@ -140,14 +219,30 @@ const statsFor = (sourceId: string) => {
     padding: 12px 16px;
     margin: 16px 0;
   }
+  /* Summary del details: header + stats visibles con la tarjeta colapsada
+     (Tanda H2). El contenido (playbook y ofertas) queda bajo el pliegue. */
   .fuente-head {
     display: flex;
     gap: 8px;
     align-items: baseline;
     flex-wrap: wrap;
+    cursor: pointer;
+    list-style: none;
+  }
+  .fuente-head::-webkit-details-marker {
+    display: none;
   }
   .fuente-head h2 {
     font-size: 13px;
+  }
+  .fuente-chevron {
+    margin-left: auto;
+    font-size: 14px;
+    line-height: 1;
+    transition: transform 150ms ease;
+  }
+  .fuente-card[open] .fuente-chevron {
+    transform: rotate(90deg);
   }
   .fuente-off {
     opacity: 0.6;
@@ -160,15 +255,18 @@ const statsFor = (sourceId: string) => {
     word-break: break-all;
   }
   .fuente-stats {
+    flex-basis: 100%;
     display: flex;
     gap: 24px;
     margin: 10px 0;
   }
-  .fuente-stats dt {
+  .fuente-stat-label {
+    display: block;
     font-size: 11px;
     opacity: 0.7;
   }
-  .fuente-stats dd {
+  .fuente-stat-value {
+    display: block;
     font-size: 13px;
     font-weight: 600;
   }
@@ -206,5 +304,66 @@ const statsFor = (sourceId: string) => {
   .fuentes-empty {
     font-size: 12px;
     opacity: 0.8;
+  }
+
+  /* ===== Barridos (Fase G, movido de /ofertas en la Tanda H2) ===== */
+  .sweeps {
+    max-width: 1100px;
+    margin: 16px 0 0;
+    border: 1px solid var(--border, #d9d9d9);
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+  .sweeps > summary {
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+  }
+  .sweep {
+    border-top: 1px solid var(--border, #d9d9d9);
+    padding: 10px 0;
+  }
+  .sweep-head {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+  .sweep-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+    margin: 6px 0;
+  }
+  .sweep-vacantes {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    font-size: 12px;
+  }
+  .sweep-vacantes li {
+    margin: 3px 0;
+  }
+  .sweep-notes {
+    margin-top: 8px;
+    font-size: 12px;
+  }
+  .sweep-notes > summary {
+    cursor: pointer;
+  }
+  .muted {
+    color: var(--muted);
+  }
+  .tiny {
+    font-size: 11px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fuente-chevron {
+      transition: none;
+    }
   }
 </style>

@@ -2,18 +2,18 @@
 /**
  * "Ofertas" (Fase F, variante D): la vista de resultados del pipeline como
  * producto. Sidebar de filtros (Estado, Perfil, Top matches), cards compactas y
- * visor a la derecha con las 4 vistas (Oferta original / CV adaptado / Cover
- * letter / Postulacion). La data viene de las carpetas de docs/job-offers con el
- * read model; en build generico solo entran ofertas demo (ADR-0033). Sin
- * seguimiento ni acciones de envio: el Submit de cualquier postulacion lo aprieta
- * siempre el usuario.
+ * visor a la derecha con las 5 vistas (Oferta original / Match report / CV
+ * adaptado / Cover letter / Postulacion). La data viene de las carpetas de
+ * docs/job-offers con el read model; en build generico solo entran ofertas demo
+ * (ADR-0033). Sin seguimiento ni acciones de envio: el Submit de cualquier
+ * postulacion lo aprieta siempre el usuario.
  */
 import { marked } from 'marked';
 import Layout from '../layouts/Layout.astro';
 import SiteNav from '../components/SiteNav.astro';
 import OffersView from '../islands/offers-view/OffersView';
 import { listOffers, readOfferDetail, stripFrontmatter } from '../lib/job-offers';
-import { listSources, listSweeps } from '../lib/job-search';
+import { listSources } from '../lib/job-search';
 import { loadProfile, nameInitials } from '../lib/profile';
 import { resumeSchema } from '../schemas/resume';
 import type { OfferRow } from '../islands/offers-view/contract';
@@ -21,8 +21,6 @@ import type { OfferRow } from '../islands/offers-view/contract';
 const { profile } = loadProfile();
 
 const sources = listSources();
-const sweeps = listSweeps();
-const sourceName = (id: string) => sources.find((source) => source.id === id)?.nombre ?? id;
 
 const rows: OfferRow[] = listOffers().map((listing) => {
   const detail = readOfferDetail(listing.slug);
@@ -85,71 +83,7 @@ const positionings = profile.positionings.map((positioning) => ({
     <div class="spacer"></div>
   </div>
 
-  {/* Barridos (Fase G): historial del pipeline de busqueda. Colapsado por
-      defecto: el detalle vive aca y las ofertas capturadas en su tab. */}
-  {sweeps.length > 0 && (
-    <details class="of-sweeps">
-      <summary>
-        Barridos
-        <span class="muted tiny">
-          {sweeps.length} registrado{sweeps.length === 1 ? '' : 's'} - ultimo {sweeps[0].fecha}
-        </span>
-      </summary>
-      <div class="of-sweeps-body">
-        {sweeps.map((sweep) => (
-          <article class="of-sweep">
-            <header class="of-sweep-head">
-              <strong>{sweep.fecha}</strong>
-              <span class="muted tiny">{sweep.id}</span>
-              <span class="of-row tight">
-                {sweep.fuentes.map((entry) => (
-                  <span class="chip">{sourceName(entry.sourceId)}</span>
-                ))}
-              </span>
-            </header>
-            <p class="of-row tight">
-              <span class="chip">nuevas: {sweep.vacantes.filter((v) => v.estado === 'nueva').length}</span>
-              <span class="chip">capturadas: {sweep.capturadas.length}</span>
-              <span class="chip">
-                ya postuladas: {sweep.vacantes.filter((v) => v.estado === 'ya postulada').length}
-              </span>
-              <span class="chip">
-                descartadas: {sweep.vacantes.filter((v) => v.estado === 'descartada').length}
-              </span>
-            </p>
-            <ul class="of-sweep-vacantes">
-              {sweep.vacantes.map((vacante) => (
-                <li>
-                  <span class={`of-badge ${
-                    vacante.estado === 'descartada'
-                      ? 'of-badge-descartada'
-                      : vacante.estado === 'ya postulada'
-                        ? 'of-badge-enviada'
-                        : vacante.estado === 'capturada'
-                          ? 'of-badge-confirmada'
-                          : 'of-badge-borrador'
-                  }`}>{vacante.estado}</span>
-                  {vacante.empresa ? `${vacante.empresa} - ` : ''}
-                  {vacante.titulo}
-                  {vacante.motivo && <span class="muted"> — {vacante.motivo}</span>}
-                </li>
-              ))}
-            </ul>
-            {sweep.particularidades.length > 0 && (
-              <details class="of-sweep-notes">
-                <summary>Particularidades del proceso</summary>
-                <ul>
-                  {sweep.particularidades.map((nota) => (
-                    <li>{nota}</li>
-                  ))}
-                </ul>
-              </details>
-            )}
-          </article>
-        ))}
-      </div>
-    </details>
-  )}
+  {/* La seccion "Barridos" del pipeline vive en /fuentes (Tanda H2). */}
 
   <OffersView
     client:load
@@ -159,62 +93,51 @@ const positionings = profile.positionings.map((positioning) => ({
   />
 
   <style is:global>
-    /* ===== Barridos (Fase G): historial del pipeline de busqueda ===== */
-    .of-sweeps {
-      max-width: 1100px;
-      margin: 0 auto 16px;
-      border: 1px solid var(--border, #d9d9d9);
-      border-radius: 8px;
-      padding: 8px 12px;
-    }
-    .of-sweeps > summary {
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      display: flex;
-      gap: 8px;
-      align-items: baseline;
-    }
-    .of-sweep {
-      border-top: 1px solid var(--border, #d9d9d9);
-      padding: 10px 0;
-    }
-    .of-sweep-head {
-      display: flex;
-      gap: 10px;
-      align-items: baseline;
-      flex-wrap: wrap;
-    }
-    .of-sweep-vacantes {
-      margin: 8px 0 0;
-      padding-left: 18px;
-      font-size: 12px;
-    }
-    .of-sweep-vacantes li {
-      margin: 3px 0;
-    }
-    .of-sweep-notes {
-      margin-top: 8px;
-      font-size: 12px;
-    }
-    .of-sweep-notes > summary {
-      cursor: pointer;
-    }
-
     /* ===== Vista "Ofertas" (Fase F, variante D) =====
        Reglas de UI: pills solo para etiquetas (chips/badges), rectangulos para
        acciones (boton base + primario/secundario/ghost), segmented para las
        vistas del visor, focus-visible, transiciones 150ms, prefers-reduced-motion
        y escala tipografica 11/12/13. */
     .of-shell {
+      /* Layout fluido (Tanda H2): sin tope de ancho, con los anchos de panel en
+         vars (los splitters de la H2d las mueven). El visor por defecto mide lo
+         mismo que la hoja del CV de Mis Perfiles (8.5in, Layout.astro) y el feed
+         se queda con el resto. Cinco columnas: los splitters ocupan las dos
+         columnas de 12px que hacen de gap entre paneles. */
+      --of-side-w: 180px;
+      --of-viewer-w: 8.5in;
       display: grid;
-      grid-template-columns: 180px minmax(280px, 1fr) minmax(330px, 1.15fr);
-      gap: 12px;
+      grid-template-columns:
+        minmax(140px, var(--of-side-w))
+        12px
+        minmax(280px, 1fr)
+        12px
+        minmax(340px, var(--of-viewer-w));
+      gap: 0;
       align-items: start;
-      max-width: 1180px;
       margin: 0 auto;
       padding: 16px 20px 32px 20px;
       color: var(--ink);
+    }
+
+    /* ---- Splitters de paneles (Tanda H2d): handles verticales invisibles
+       sobre el gap, con drag o flechas del teclado (los clamps viven en la
+       isla). Solo desktop: el layout apilado no tiene paneles lado a lado. ---- */
+    .of-splitter {
+      align-self: stretch;
+      cursor: col-resize;
+      border-radius: 4px;
+      background: transparent;
+      touch-action: none;
+      transition: background-color 150ms ease;
+    }
+    .of-splitter:hover,
+    .of-splitter.dragging {
+      background: color-mix(in srgb, var(--accent) 30%, transparent);
+    }
+    .of-splitter:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
     }
 
     /* ---- Boton base + variantes (rectangulos: acciones) ---- */
@@ -533,7 +456,9 @@ const positionings = profile.positionings.map((positioning) => ({
     }
     .of-pane {
       padding: 12px 14px;
-      max-height: 620px;
+      /* Alto acotado por el viewport (Tanda H2): el visor es sticky, asi que el
+         panel aprovecha la pantalla en vez de un tope fijo de 620px. */
+      max-height: calc(100vh - 96px);
       overflow: auto;
       font-size: 12px;
     }
@@ -698,6 +623,9 @@ const positionings = profile.positionings.map((positioning) => ({
     @media (max-width: 1000px) {
       .of-shell {
         grid-template-columns: 1fr;
+      }
+      .of-splitter {
+        display: none;
       }
       .of-side {
         border-right: none;

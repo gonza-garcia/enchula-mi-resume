@@ -3,7 +3,9 @@ import { test, expect } from '@playwright/test';
 /**
  * Pagina "Fuentes" (Fase G, ADR-0043) contra el build demo: dos fuentes
  * ficticias (demo-job-board y demo-curated-sheet), su playbook, sus ofertas
- * historicas vinculadas (aurora y nimbus) y sus stats contra el barrido demo.
+ * historicas vinculadas (aurora y nimbus), sus stats contra el barrido demo y
+ * la seccion Barridos (movida aca desde /ofertas en la Tanda H2). Las tarjetas
+ * estan colapsadas por defecto (Tanda H2): header + stats visibles.
  */
 
 const AURORA = '2026-10-05-aurora-labs-reactjs-frontend-developer';
@@ -16,6 +18,7 @@ test.describe('Fuentes (Fase G)', () => {
     const board = page.locator('.fuente-card', { hasText: 'Demo Job Board' });
     await expect(board.locator('.chip', { hasText: 'job-board' })).toHaveCount(1);
     await expect(board.locator('.chip', { hasText: 'activa' })).toHaveCount(1);
+    await board.locator('summary').click();
     const playbook = board.locator('.fuente-playbook');
     await expect(playbook).toContainText('Buscar:');
     await expect(playbook).toContainText('Herramientas:');
@@ -24,13 +27,30 @@ test.describe('Fuentes (Fase G)', () => {
 
     const sheet = page.locator('.fuente-card', { hasText: 'Demo Curated Spreadsheet' });
     await expect(sheet.locator('.chip', { hasText: 'spreadsheet' })).toHaveCount(1);
+    await sheet.locator('summary').click();
     await expect(sheet.locator('.fuente-playbook')).toContainText('Export CSV');
+  });
+
+  test('las tarjetas de fuente estan colapsadas por defecto (Tanda H2)', async ({ page }) => {
+    await page.goto('/fuentes/');
+    const board = page.locator('.fuente-card', { hasText: 'Demo Job Board' });
+
+    // Colapsada: header con sus chips y stats visibles, contenido bajo el pliegue.
+    await expect(board.locator('.chip', { hasText: 'job-board' })).toBeVisible();
+    await expect(board.locator('.fuente-stats')).toBeVisible();
+    await expect(board.locator('.fuente-playbook')).toBeHidden();
+    await expect(board.locator('.fuente-historial')).toBeHidden();
+
+    await board.locator('summary').click();
+    await expect(board.locator('.fuente-playbook')).toBeVisible();
+    await expect(board.locator('.fuente-historial')).toBeVisible();
   });
 
   test('stats por fuente: ultimo barrido, capturadas y descartadas', async ({ page }) => {
     await page.goto('/fuentes/');
     const board = page.locator('.fuente-card', { hasText: 'Demo Job Board' });
     const stats = board.locator('.fuente-stats');
+    await expect(stats).toBeVisible();
     await expect(stats).toContainText('2026-10-05');
     await expect(stats).toContainText('Ofertas capturadas');
     await expect(stats).toContainText('Vacantes descartadas');
@@ -39,12 +59,30 @@ test.describe('Fuentes (Fase G)', () => {
   test('el historial por fuente enlaza a la oferta en Mis perfiles', async ({ page }) => {
     await page.goto('/fuentes/');
     const board = page.locator('.fuente-card', { hasText: 'Demo Job Board' });
+    await board.locator('summary').click();
     const link = board.locator('.fuente-historial a', { hasText: 'Aurora Labs' });
     await expect(link).toHaveAttribute('href', `/ofertas/?oferta=${AURORA}`);
 
     const sheet = page.locator('.fuente-card', { hasText: 'Demo Curated Spreadsheet' });
+    await sheet.locator('summary').click();
     await expect(sheet.locator('.fuente-historial')).toContainText('Nimbus Software');
     await expect(sheet.locator('.fuente-historial')).toContainText('postulación: descartada');
+  });
+
+  test('seccion Barridos: historial con numeros, detalle de vacantes y particularidades', async ({
+    page
+  }) => {
+    await page.goto('/fuentes/');
+    const sweeps = page.locator('.sweeps');
+    await expect(sweeps.locator('> summary')).toContainText('Barridos');
+    await expect(sweeps.locator('> summary')).toContainText('1 registrado - ultimo 2026-10-05');
+    await sweeps.locator('> summary').click();
+    await expect(sweeps.locator('.sweep')).toHaveCount(1);
+    await expect(sweeps).toContainText('descartadas: 1');
+    await expect(sweeps).toContainText('Ficticia Corp - Staff Frontend Engineer');
+    await expect(sweeps).toContainText('Nivel Staff sin experiencia suficiente');
+    await sweeps.locator('.sweep-notes > summary').click();
+    await expect(sweeps.locator('.sweep-notes')).toContainText('feed JSON del board demora');
   });
 
   test('la navbar muestra los 5 destinos con Fuentes activo', async ({ page }) => {
