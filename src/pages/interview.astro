@@ -198,7 +198,7 @@ const sources = Array.from(
 ).sort((left, right) => left.label.localeCompare(right.label));
 ---
 
-<Layout title={`Prep entrevistas - ${profile.identity.name.en}`}>
+<Layout title={`Prep entrevistas - ${profile.identity.name.en}`} contentMax="1600px" contentPad="clamp(20px, 4vw, 64px)">
   {/* Navbar slim de 3 destinos (Fase D): brand + links, sin controles (idioma y tema viven en el sidebar de "Mis perfiles"). */}
   <div class="toolbar">
     <SiteNav
@@ -272,8 +272,8 @@ const sources = Array.from(
 
     .interview-header-inner {
       margin: 0 auto;
-      max-width: 1600px;
-      padding: 28px clamp(20px, 4vw, 64px) 58px;
+      max-width: var(--content-max, 1600px);
+      padding: 28px var(--content-pad, clamp(20px, 4vw, 64px)) 58px;
       position: relative;
       z-index: 1;
     }
@@ -355,8 +355,8 @@ const sources = Array.from(
       gap: clamp(18px, 3vw, 38px);
       grid-template-columns: minmax(230px, 280px) minmax(0, 1fr);
       margin: 0 auto;
-      max-width: 1600px;
-      padding: 24px clamp(20px, 4vw, 64px) 80px;
+      max-width: var(--content-max, 1600px);
+      padding: 24px var(--content-pad, clamp(20px, 4vw, 64px)) 80px;
     }
 
     .interview-filters {

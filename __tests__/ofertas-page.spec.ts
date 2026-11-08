@@ -291,24 +291,25 @@ test.describe('Ofertas: variante D como producto', () => {
     await expect(page.locator('.of-pane .of-prose')).toContainText('Match fuerte');
     await expect(page.locator('.of-pane .of-prose')).not.toContainText('Sin match-report.md');
 
-    // el menu de tres puntos baja el archivo de la vista activa
+    // el menu de tres puntos abre el dialogo "Descargar" con el set de la oferta
     await page.locator('button[aria-label="Más acciones"]').click();
-    const downloadPromise = page.waitForEvent('download');
     await page.locator('.of-menu-item', { hasText: 'Descargar' }).click();
+    const downloadPromise = page.waitForEvent('download');
+    await page.locator('.download-doc').nth(1).locator('[data-format="md"]').click();
     expect((await downloadPromise).suggestedFilename()).toBe('match-report.md');
   });
 
   test('vista CV adaptado muestra el CV de la carpeta', async ({ page }) => {
     await gotoOfertas(page);
     await page.locator('.of-segmented [role="tab"]').nth(2).click();
-    await expect(page.locator('.of-cv h1')).toHaveText('Ariana Montiel');
-    await expect(page.locator('.of-cv')).toContainText('real-time analytics');
+    await expect(page.locator('.of-pane .of-cv h1')).toHaveText('Ariana Montiel');
+    await expect(page.locator('.of-pane .of-cv')).toContainText('real-time analytics');
   });
 
   test('vista Cover letter: texto si existe y estado vacio si no', async ({ page }) => {
     await gotoOfertas(page);
     await page.locator('.of-segmented [role="tab"]').nth(3).click();
-    await expect(page.locator('.of-prose')).toContainText('Hi Nimbus team');
+    await expect(page.locator('.of-pane .of-prose')).toContainText('Hi Nimbus team');
     await page.locator('.of-card').nth(1).click();
     await expect(page.locator('.of-pane')).toContainText('Sin cover-letter.md en la carpeta de la oferta.');
   });
@@ -382,19 +383,19 @@ test.describe('Ofertas: variante D como producto', () => {
     await expect(repaso).not.toHaveClass(/disabled/);
   });
 
-  test('menu de tres puntos: Descargar baja el archivo de la vista activa', async ({ page }) => {
+  test('menu de tres puntos: Descargar abre el dialogo con el set de la oferta', async ({ page }) => {
     await gotoOfertas(page);
     await page.locator('.of-card').nth(1).click();
     await page.locator('button[aria-label="Más acciones"]').click();
-    const downloadPromise = page.waitForEvent('download');
     await page.locator('.of-menu-item', { hasText: 'Descargar' }).click();
-    expect((await downloadPromise).suggestedFilename()).toBe('offer.md');
-
-    await page.locator('.of-segmented [role="tab"]').nth(4).click();
-    await page.locator('button[aria-label="Más acciones"]').click();
-    const downloadApp = page.waitForEvent('download');
-    await page.locator('.of-menu-item', { hasText: 'Descargar' }).click();
-    expect((await downloadApp).suggestedFilename()).toBe('application.md');
+    await expect(page.locator('[data-download-dialog]')).toBeVisible();
+    await expect(page.locator('.download-doc-label')).toHaveText([
+      'Oferta',
+      'Match report',
+      'CV',
+      'Cover letter',
+      'Postulación'
+    ]);
   });
 
   test('filtro Estado: Capturadas vacia, Confirmada acota, Limpiar filtros restaura', async ({

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import type { EstadoFilter, OfferRow, OffersViewProps, ViewerView } from './contract';
 import { ESTADO_FILTERS, VIEWER_VIEWS } from './contract';
+import type { DownloadPayload } from '../../scripts/download-export';
 import AdaptedCvView from './AdaptedCvView';
 
 const BADGE_CLASS: Record<string, string> = {
@@ -119,7 +120,7 @@ type PanelId = 'side' | 'viewer';
  * carpetas de docs/job-offers); aca solo se filtra y se muestra. Sin seguimiento
  * ni acciones de envio: el Submit de cualquier postulacion lo aprieta el usuario.
  */
-export default function OffersView({ rows, positionings, sources }: OffersViewProps) {
+export default function OffersView({ rows, positionings, sources, profileName }: OffersViewProps) {
   const [estado, setEstado] = useState<EstadoFilter>('todas');
   const [perfil, setPerfil] = useState<string | null>(null);
   const [fuente, setFuente] = useState<string | null>(null);
@@ -345,45 +346,51 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
   const perfilTitle = (id: string): string =>
     positionings.find((positioning) => positioning.id.toLowerCase() === id.toLowerCase())?.title ?? id;
 
-  const activeFile = (): { name: string; content: string; mime: string } | null => {
-    if (!selected) return null;
-    if (view === 'oferta') return { name: 'offer.md', content: selected.offerRaw, mime: 'text/markdown' };
-    if (view === 'report') {
-      return selected.reportRaw
-        ? { name: 'match-report.md', content: selected.reportRaw, mime: 'text/markdown' }
-        : null;
-    }
-    if (view === 'cv') {
-      if (!selected.adaptedResume && !selected.adaptedRaw) return null;
-      return {
-        name: 'adapted-resume.json',
-        content: selected.adaptedRaw ?? `${JSON.stringify(selected.adaptedResume, null, 2)}\n`,
-        mime: 'application/json'
-      };
-    }
-    if (view === 'cover') {
-      return selected.coverRaw
-        ? { name: 'cover-letter.md', content: selected.coverRaw, mime: 'text/markdown' }
-        : null;
-    }
-    return selected.applicationRaw
-      ? { name: 'application.md', content: selected.applicationRaw, mime: 'text/markdown' }
-      : null;
-  };
-
-  const handleDownload = () => {
-    const file = activeFile();
+  // "Descargar" del menu (Tanda H3c): abre el dialogo reutilizable con el set
+  // completo de la oferta, preseleccionando la vista activa del visor. Los
+  // documentos sin archivo quedan deshabilitados con el mismo texto de vacio
+  // del visor.
+  const openDownload = () => {
     setMenuOpen(false);
-    if (!file) return;
-    const blob = new Blob([file.content], { type: `${file.mime};charset=utf-8` });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = file.name;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
+    if (!selected) return;
+    const cv = selected.adaptedResume ? (selected.adaptedResume.en ?? selected.adaptedResume.es) : undefined;
+    const cvLocale: 'en' | 'es' = selected.adaptedResume?.en ? 'en' : 'es';
+    const detail: DownloadPayload = {
+      name: profileName,
+      locale: cvLocale,
+      activeDoc: view,
+      docs: [
+        { doc: 'oferta', enabled: true, raw: selected.offerRaw },
+        {
+          doc: 'report',
+          enabled: Boolean(selected.reportRaw),
+          raw: selected.reportRaw ?? undefined,
+          hint: 'Sin match-report.md en la carpeta de la oferta.'
+        },
+        {
+          doc: 'cv',
+          enabled: Boolean(cv),
+          cv,
+          hint: selected.adaptedResumeInvalid
+            ? 'Hay un adapted-resume.json pero no pasa la validación de schema. Abrilo y corregilo a mano.'
+            : 'Sin adapted-resume.json en la carpeta de la oferta.'
+        },
+        {
+          doc: 'cover',
+          enabled: Boolean(selected.coverRaw),
+          raw: selected.coverRaw ?? undefined,
+          locale: selected.coverLocale ?? undefined,
+          hint: 'Sin cover-letter.md en la carpeta de la oferta.'
+        },
+        {
+          doc: 'postulacion',
+          enabled: Boolean(selected.applicationRaw),
+          raw: selected.applicationRaw ?? undefined,
+          hint: 'Oferta capturada sin postular: no hay application.md en la carpeta.'
+        }
+      ]
+    };
+    window.dispatchEvent(new CustomEvent('download:open', { detail }));
   };
 
   // Handle de resize entre dos paneles (Tanda H2d): separador vertical
@@ -641,12 +648,7 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
                     >
                       Cargar repaso
                     </a>
-                    <button
-                      type="button"
-                      className={`of-menu-item${activeFile() ? '' : ' disabled'}`}
-                      disabled={!activeFile()}
-                      onClick={handleDownload}
-                    >
+                    <button type="button" className="of-menu-item" onClick={openDownload}>
                       Descargar
                     </button>
                   </div>
@@ -809,6 +811,27 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
         ) : (
           <div className="of-empty">
             <p>No hay ofertas para mostrar.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Copias de impresion (Tanda H3c): el PDF del dialogo "Descargar" emite
+          por print solo el documento elegido (body[data-print-doc]), sin mover
+          la vista del visor. Mismo markup que las vistas: WYSIWYG con el DOCX. */}
+      <div className="of-print-set">
+        {selected && (
+          <div className="of-print-copy" data-print-copy="oferta">
+            <div className="of-prose" dangerouslySetInnerHTML={{ __html: selected.offerHtml }} />
+          </div>
+        )}
+        {selected?.adaptedResume && (
+          <div className="of-print-copy" data-print-copy="cv">
+            <AdaptedCvView data={selected.adaptedResume} />
+          </div>
+        )}
+        {selected?.coverHtml && (
+          <div className="of-print-copy" data-print-copy="cover">
+            <div className="of-prose" dangerouslySetInnerHTML={{ __html: selected.coverHtml }} />
           </div>
         )}
       </div>

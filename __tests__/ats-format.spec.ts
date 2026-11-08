@@ -130,8 +130,10 @@ test.describe('Formato ATS v4 — CV adaptado (oferta demo Aurora Labs, /ofertas
   async function openAdaptedCv(page: Page) {
     await page.goto(`/ofertas/?oferta=${AURORA}`);
     await page.click('#of-view-tab-cv');
-    await expect(page.locator('.of-cv')).toBeVisible();
-    return page.locator('.of-cv');
+    // .of-pane acota al visor: las copias de impresion del dialogo "Descargar"
+    // (Tanda H3c) traen el mismo markup fuera del panel.
+    await expect(page.locator('.of-pane .of-cv')).toBeVisible();
+    return page.locator('.of-pane .of-cv');
   }
 
   test('muestra el mismo formato de linea de cliente y bullets literales', async ({ page }) => {

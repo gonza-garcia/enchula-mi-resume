@@ -115,10 +115,11 @@ decisión vigente de este README tienen prioridad sobre el texto histórico de u
 - El toggle de idioma y el panel de tema funcionan del lado cliente y viven en el sidebar
   de "Mis perfiles" (Fase H).
 - El CV se imprime desde el navegador con `window.print()` y CSS de impresión, sin una
-  librería de PDF. El export de la app (PDF/DOCX/JSON) está retirado hasta el diálogo
-  reutilizable "Descargar" de la H3: entre la H1 y la H3 la app no exporta nada (hueco
-  confirmado por la persona usuaria); el contrato ATS v4 del DOCX se protege con unit test
-  contra el Packer (`buildResumeDocx`, ADR-0039).
+  librería de PDF. El export de la app es el diálogo reutilizable "Descargar" (Fase H3):
+  oferta PDF/TXT · match report MD · CV PDF/DOCX/JSON · cover PDF/MD · postulación MD/TXT,
+  compartido entre "Mis perfiles" y `/ofertas`. Los PDF salen por impresión del navegador
+  con el nombre sugerido neutro (ADR-0036), el DOCX por `buildResumeDocx` (ADR-0039) y los
+  textos verbatim (MD con frontmatter, TXT sin).
 - La impresión conserva el accent elegido para headings y URLs, con texto y fondo claros para
   mantener legibilidad y parsing.
 - `/interview` mantiene UI en español y contenido del banco en inglés. El progreso de estudio
@@ -175,14 +176,16 @@ decisión vigente de este README tienen prioridad sobre el texto histórico de u
   sidebar (Fase H1): selector de perfil en lista (los posicionamientos del perfil son los
   perfiles: Frontend, Frontend AI, y los que se agreguen), idioma y tema. Sin JavaScript
   se renderiza el CV base y el print emite solo el documento activo (el sidebar no se
-  imprime). El "Descargar" del sidebar llega con el diálogo reutilizable de la H3; entre
-  la H1 y la H3 la app no exporta nada (hueco confirmado por la persona usuaria).
+  imprime). El “Descargar” del sidebar abre el diálogo reutilizable (Fase H3) con el set
+  del CV activo: PDF · DOCX · JSON del posicionamiento e idioma activos.
 - Navbar consistente de 5 destinos ("Mis perfiles" · "Ofertas" · "Fuentes" · "Prep
   entrevistas" · "Plan de estudios") en todas las páginas, desde el componente compartido
   `SiteNav`, como links con subrayado. El Toolbar completo (brand + nav + aviso de build)
   vive solo en "Mis perfiles"; el resto de las páginas conservan la barra slim.
-- El nombre neutro de los PDF exportados (ADR-0036) queda sin superficie hasta que el
-  export vuelva con la H3.
+- Los documentos que viajan a un portal o un email (CV y cover) salen con nombre neutro
+  (ADR-0036, `<apellidos> <nombres> - <documento> - <LOCALE>.<ext>`, con el nombre sugerido
+  vía `document.title` en el PDF); el registro propio (oferta, match report, postulación)
+  sale con el nombre literal del archivo.
 
 ### Página "Ofertas" y contrato de postulación (ADR-0042 y ADR-0044)
 
@@ -193,8 +196,10 @@ decisión vigente de este README tienen prioridad sobre el texto histórico de u
   (score, `rol -
   empresa`, estado/fecha/ATS, chips de metadata y 1 línea de motivo o confirmación) y
   visor con segmented de 5 vistas (Oferta original / Match report / CV adaptado / Cover
-  letter / Postulación) y menú de tres puntos ("Cargar repaso", que navega a
-  `/interview/?repaso=<slug>`, y "Descargar", que baja el archivo de la vista activa). El
+  letter / Postulación) y menú de tres puntos (“Cargar repaso”, que navega a
+  `/interview/?repaso=<slug>`, y “Descargar”, que abre el diálogo reutilizable con el set
+  completo de la oferta: la vista activa queda marcada, las entradas sin archivo quedan
+  deshabilitadas y los PDF imprimen solo el documento elegido). El
   CV adaptado se renderiza con el mismo markup ATS v4 que el CV base, con la tipografía
   acotada al panel del visor (Fase H1), y el deep link canónico de una oferta es
   `/ofertas/?oferta=<slug>` (selección con la URL al día).
@@ -707,3 +712,17 @@ contexto y no contradecir las decisiones vigentes de este README.
   chico sigue apilado, sin splitters (H2c-H2d). La sección "Barridos" se muda a `/fuentes`
   (H2a) y las tarjetas de fuente quedan colapsadas por defecto: header con chips y stats
   visibles, playbook y ofertas al expandir (H2b). Verificación en verde: 298 tests.
+- 8 nov 2026 (Fase H, H3): **el diálogo reutilizable “Descargar” cierra el hueco de export
+  y la barra se alinea al contenido**. El diálogo (compartido entre “Mis perfiles” y
+  `/ofertas`) exporta oferta PDF/TXT · match report MD · CV PDF/DOCX/JSON · cover PDF/MD ·
+  postulación MD/TXT: los PDF por impresión del navegador con nombre sugerido neutro
+  (ADR-0036), el DOCX por `buildResumeDocx` y los textos verbatim (MD con frontmatter, TXT
+  sin). En `/ofertas` lo abre el menú de tres puntos con el set completo, la vista activa
+  marcada y las entradas sin archivo deshabilitadas; los PDF imprimen solo el documento
+  elegido sin mover la vista (H3a-H3c). Quick win del navbar (H3d): barra y contenido
+  alineados por columna (`--content-max` / `--content-pad` compartidos entre la barra y los
+  contenedores de las 5 páginas). Ojo con el registro: la observación del quick win (“el
+  navbar tiene un tope de 1180px y queda más angosto que el contenido”) no se reproduce —
+  el navbar siempre fue fluido y el 1180px era el contenido de Mis perfiles —; lo alineado
+  fue la columna de contenido de cada página. Cierra el hueco de export confirmado el
+  8-nov y el ADR-0036 vuelve a tener superficie. Verificación en verde: 326 tests.

@@ -16,7 +16,7 @@ const positionings = profile.positionings.map((positioning) => ({
 }));
 ---
 
-<Layout title={`Plan de estudios - ${profile.identity.name.en}`}>
+<Layout title={`Plan de estudios - ${profile.identity.name.en}`} contentMax="1080px">
   {/* Navbar slim de 3 destinos (Fase D): brand + links, sin controles (idioma y tema viven en el sidebar de "Mis perfiles"). */}
   <div class="toolbar">
     <SiteNav
@@ -38,9 +38,9 @@ const positionings = profile.positionings.map((positioning) => ({
 
   <style is:global>
     .learning-app {
-      max-width: 1080px;
+      max-width: var(--content-max, 1080px);
       margin: 0 auto;
-      padding: 1.5rem 1.25rem 4rem;
+      padding: 1.5rem var(--content-pad, 1.25rem) 4rem;
       color: var(--ink);
     }
 

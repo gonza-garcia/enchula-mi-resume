@@ -31,7 +31,7 @@ const statsFor = (sourceId: string) => {
 };
 ---
 
-<Layout title={`Fuentes - ${profile.identity.name.en}`}>
+<Layout title={`Fuentes - ${profile.identity.name.en}`} contentMax="1100px" contentPad="16px">
   {/* Navbar slim de 5 destinos (Fase F/G): brand + links, sin controles (idioma y tema viven en el sidebar de "Mis perfiles"). */}
   <div class="toolbar">
     <SiteNav
@@ -199,9 +199,9 @@ const statsFor = (sourceId: string) => {
 
 <style>
   .fuentes {
-    max-width: 1100px;
+    max-width: var(--content-max, 1100px);
     margin: 0 auto;
-    padding: 16px;
+    padding: 16px var(--content-pad, 16px);
   }
   .fuentes h1 {
     font-size: 13px;

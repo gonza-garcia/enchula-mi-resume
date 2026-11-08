@@ -12,7 +12,7 @@ import { marked } from 'marked';
 import Layout from '../layouts/Layout.astro';
 import SiteNav from '../components/SiteNav.astro';
 import OffersView from '../islands/offers-view/OffersView';
-import { listOffers, readOfferDetail, stripFrontmatter } from '../lib/job-offers';
+import { listOffers, readOfferDetail, parseCoverLetterFile, stripFrontmatter } from '../lib/job-offers';
 import { listSources } from '../lib/job-search';
 import { loadProfile, nameInitials } from '../lib/profile';
 import { resumeSchema } from '../schemas/resume';
@@ -57,6 +57,7 @@ const rows: OfferRow[] = listOffers().map((listing) => {
     reportRaw,
     coverHtml: coverRaw ? (marked.parse(stripFrontmatter(coverRaw)) as string) : null,
     coverRaw,
+    coverLocale: coverRaw ? parseCoverLetterFile(coverRaw).locale : null,
     adaptedResume,
     adaptedResumeInvalid: Boolean(detail?.adaptedResume) && !adaptedResume,
     adaptedRaw: detail?.adaptedRaw ?? null,
@@ -70,7 +71,7 @@ const positionings = profile.positionings.map((positioning) => ({
 }));
 ---
 
-<Layout title={`Ofertas - ${profile.identity.name.en}`}>
+<Layout title={`Ofertas - ${profile.identity.name.en}`} contentMax="100%">
   {/* Navbar slim de 4 destinos (Fase F): brand + links, sin controles (idioma y tema viven en el sidebar de "Mis perfiles"). */}
   <div class="toolbar">
     <SiteNav
@@ -90,6 +91,7 @@ const positionings = profile.positionings.map((positioning) => ({
     rows={rows}
     positionings={positionings}
     sources={sources.map((source) => ({ id: source.id, nombre: source.nombre }))}
+    profileName={profile.identity.name.en}
   />
 
   <style is:global>
@@ -103,7 +105,9 @@ const positionings = profile.positionings.map((positioning) => ({
          vars (los splitters de la H2d las mueven). El visor por defecto mide lo
          mismo que la hoja del CV de Mis Perfiles (8.5in, Layout.astro) y el feed
          se queda con el resto. Cinco columnas: los splitters ocupan las dos
-         columnas de 12px que hacen de gap entre paneles. */
+         columnas de 12px que hacen de gap entre paneles. El padding lateral
+         comparte --content-pad con la barra (Tanda H3d: barra y contenido
+         alineados; aca contentMax="100%", todo fluido). */
       --of-side-w: 180px;
       --of-viewer-w: 8.5in;
       display: grid;
@@ -116,7 +120,7 @@ const positionings = profile.positionings.map((positioning) => ({
       gap: 0;
       align-items: start;
       margin: 0 auto;
-      padding: 16px 20px 32px 20px;
+      padding: 16px var(--content-pad, 20px) 32px;
       color: var(--ink);
     }
 
@@ -619,6 +623,24 @@ const positionings = profile.positionings.map((positioning) => ({
     .of-cv .edu-dates, .of-cv .proj-meta { font-size: 9.5px; color: var(--muted); white-space: nowrap; }
     .of-cv .cert-note, .of-cv .proj-desc { font-size: 10.5px; }
     .of-cv .edu-note { font-size: 9.5px; color: var(--muted); margin-top: 1px; }
+
+    /* Copias de impresion (Tanda H3c): el dialogo "Descargar" emite por print
+       solo el documento elegido (body[data-print-doc]), sin mover la vista del
+       visor. Chrome de pantalla: invisible arriba de la pantalla. */
+    .of-print-set { display: none; }
+
+    @media print {
+      .of-shell { display: block; padding: 0; }
+      .of-side, .of-feed, .of-viewer, .of-splitter { display: none !important; }
+      .of-print-set { display: none; padding: 0.5in; }
+      body[data-print-doc="oferta"] .of-print-set,
+      body[data-print-doc="cv"] .of-print-set,
+      body[data-print-doc="cover"] .of-print-set { display: block; }
+      .of-print-copy { display: none; }
+      body[data-print-doc="oferta"] .of-print-copy[data-print-copy="oferta"],
+      body[data-print-doc="cv"] .of-print-copy[data-print-copy="cv"],
+      body[data-print-doc="cover"] .of-print-copy[data-print-copy="cover"] { display: block; }
+    }
 
     @media (max-width: 1000px) {
       .of-shell {

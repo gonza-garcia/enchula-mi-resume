@@ -1,6 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { applicationSchema, type Application } from '../schemas/application';
+import { stripFrontmatter } from './frontmatter';
+
+export { stripFrontmatter };
 
 export type OfferState = 'agregada' | 'analizada' | 'adaptada';
 
@@ -101,10 +104,6 @@ export function parseCoverLetterFile(raw: string): CoverLetterFile {
     letter: stripFrontmatter(raw).trim(),
     locale: fm.locale === 'es' ? 'es' : 'en'
   };
-}
-
-export function stripFrontmatter(raw: string): string {
-  return raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
 }
 
 function parseFrontmatter(raw: string): Record<string, string> {

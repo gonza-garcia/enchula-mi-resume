@@ -45,6 +45,8 @@ export interface OfferRow {
   reportRaw: string | null;
   coverHtml: string | null;
   coverRaw: string | null;
+  /** Idioma de la cover (frontmatter `locale`), para su nombre neutro (ADR-0036). */
+  coverLocale: 'en' | 'es' | null;
   adaptedResume: Resume | null;
   /** Hay adapted-resume.json pero no pasa el schema: se avisa en el visor. */
   adaptedResumeInvalid: boolean;
@@ -68,6 +70,8 @@ export interface OffersViewProps {
   positionings: ProfilePositioning[];
   /** Fuentes configuradas, para rotular el filtro por fuente. */
   sources: SourceRef[];
+  /** Nombre completo del perfil, para los nombres neutros del dialogo "Descargar". */
+  profileName: string;
 }
 
 /**

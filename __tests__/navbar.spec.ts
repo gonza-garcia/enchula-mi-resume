@@ -78,4 +78,33 @@ test.describe('Navbar consistente (5 destinos)', () => {
       await expect(page.locator('.theme-panel')).toHaveCount(0);
     }
   });
+
+  test('H3d: en pantallas anchas la barra se alinea a la columna de contenido de cada pagina', async ({
+    page
+  }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    const cases: Array<[string, string]> = [
+      ['/', '.mp-shell'],
+      ['/ofertas/', '.of-shell'],
+      ['/fuentes/', '.fuentes'],
+      ['/interview/', '.interview-layout'],
+      ['/learning/', '.learning-app']
+    ];
+    for (const [path, selector] of cases) {
+      await page.goto(path);
+      const brand = await page.locator('a.brand').boundingBox();
+      const contentLeft = await page.evaluate((sel) => {
+        const el = document.querySelector(sel);
+        if (!el) return null;
+        const rect = el.getBoundingClientRect();
+        return rect.left + parseFloat(getComputedStyle(el).paddingLeft);
+      }, selector);
+      expect(brand, `brand en ${path}`).not.toBeNull();
+      expect(contentLeft, `contenido en ${path}`).not.toBeNull();
+      expect(
+        Math.abs(brand!.x - contentLeft!),
+        `el brand y el contenido arrancan a la misma altura en ${path}`
+      ).toBeLessThan(1);
+    }
+  });
 });

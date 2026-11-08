@@ -8,7 +8,9 @@ import { SECTION_TITLES, clientBlock } from '../../lib/resume-sections';
  * (`•`, `-`), linea de cliente rotulada con anos compactos, sin rangos de
  * fecha sueltos y contacto en texto plano. La tipografia se acota al panel del
  * visor con la reglas `.of-cv` de ofertas.astro ("un poco mas fina", sin
- * perder ningun atributo ATS). Lo que se ve aca es lo que la H3 va a exportar.
+ * perder ningun atributo ATS). Lo que se ve aca es lo que exporta el dialogo
+ * "Descargar" (Tanda H3): el PDF imprime esta misma vista y el DOCX sale del
+ * mismo buildResumeDocx.
  */
 export default function AdaptedCvView({ data }: { data: Resume }) {
   const locale = data.en ? 'en' : 'es';

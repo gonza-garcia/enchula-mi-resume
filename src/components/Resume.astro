@@ -28,15 +28,16 @@ const payload = {
 };
 ---
 
-<Layout title={`${brandName.en} - ${defaultPositioning.title.en}`}>
+<Layout title={`${brandName.en} - ${defaultPositioning.title.en}`} contentMax="1180px">
   <Toolbar brand={{ mark: brandMark, name: brandName.en, role: defaultPositioning.title.en }} />
 
   {/* #cv-panel-base: ancla de DOM que usan las specs de print y de tema sobre el
       CV base. Queda del tiempo de las tabs "CVs base" / "CVs adaptados", que se
       retiraron en la Fase H. */}
   <div class="mp-shell">
-    {/* Sidebar de "Mis perfiles" (Fase H1): selector de perfil en lista, idioma y
-        tema. No se imprime (chrome de pantalla). El "Descargar" llega con la H3. */}
+    {/* Sidebar de "Mis perfiles" (Fase H): selector de perfil en lista, idioma,
+        tema y Descargar (dialogo reutilizable de la Tanda H3). No se imprime
+        (chrome de pantalla). */}
     <aside class="mp-side" aria-label="Controles de Mis perfiles">
       <h2 class="mp-sec">Perfiles</h2>
       <ul class="mp-profile-list">
@@ -93,6 +94,8 @@ const payload = {
           </div>
         </div>
       </details>
+
+      <button type="button" class="mp-descargar" data-download-open>Descargar</button>
     </aside>
 
     <main class="page" id="cv-panel-base">
@@ -203,6 +206,8 @@ const payload = {
 
   <script>
     import { LANG_STORAGE_KEY, POSITIONING_STORAGE_KEY } from '../scripts/storage-keys';
+    import type { ResumeLocale } from '../schemas/resume';
+    import type { DownloadPayload } from '../scripts/download-export';
 
     type Locale = 'es' | 'en';
 
@@ -279,5 +284,20 @@ const payload = {
 
     document.addEventListener('toolbar:lang-change', () => applyState());
     document.addEventListener('toolbar:positioning-change', () => applyState());
+
+    // "Descargar" del sidebar: abre el dialogo reutilizable con el CV activo
+    // (posicionamiento e idioma activos; Tanda H3).
+    document.querySelector<HTMLButtonElement>('[data-download-open]')?.addEventListener('click', () => {
+      const lang = currentLang();
+      const positioning = currentPositioning();
+      const cv = payload.projections[positioning]?.[lang] as ResumeLocale | undefined;
+      if (!cv) return;
+      const detail: DownloadPayload = {
+        name: cv.name,
+        locale: lang,
+        docs: [{ doc: 'cv', enabled: true, cv }]
+      };
+      window.dispatchEvent(new CustomEvent('download:open', { detail }));
+    });
   </script>
 </Layout>
