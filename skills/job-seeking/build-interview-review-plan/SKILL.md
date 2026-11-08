@@ -3,8 +3,7 @@ name: build-interview-review-plan
 description: Armar y guardar el plan de repaso de una oferta para /interview: cruzar los
   "Temas a repasar" del match-report contra el banco de preguntas y escribir
   docs/job-offers/<slug>/interview-review-plan.json con las prioridades y sus ids. Usar
-  cuando el usuario pide "armar el repaso de la oferta X", "preparar la entrevista de X",
-  o cuando la app del CV genera un prompt que referencia esta skill. NO captura ofertas ni
+  cuando el usuario pide "armar el repaso de la oferta X", "preparar la entrevista de X". NO captura ofertas ni
   analiza el match (para eso están capture-job-offer y adapt-resume-to-offer) y no entrena
   al usuario: el repaso se practica en /interview.
 ---
@@ -40,6 +39,12 @@ Para cada tema, elegir preguntas **existentes** del banco
 `state-data-fetching-client-vs-server-state`, nunca abreviados con guion inicial). Un
 tema puede tener entre 3 y 6 preguntas. Si un tema no está cubierto por el banco, va a
 `gaps` (no inventar preguntas ni ids).
+
+**Además de los temas del match-report**, incluir preguntas **típicas de las tecnologías
+principales que pide la oferta** (el match fuerte, no solo los gaps): 2 a 5 preguntas
+canónicas por tecnología (React, TypeScript, testing, performance, la stack concreta del
+JD), aunque sean fortalezas del candidato. El filtro técnico pregunta las clásicas igual,
+y el plan de repaso tiene que cubrir lo canónico y lo flojo.
 
 ### 3. Ordenar las prioridades
 

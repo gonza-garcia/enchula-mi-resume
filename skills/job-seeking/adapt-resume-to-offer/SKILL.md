@@ -1,6 +1,6 @@
 ---
 name: adapt-resume-to-offer
-description: Analizar el match de una oferta ya capturada contra el CV base y generar el CV adaptado y la cover letter. Usar cuando el usuario pide "adaptar el CV a una oferta", "analizar el match", "escribir la cover letter", o cuando la app del CV genera un prompt que referencia esta skill. Requiere que la oferta esté capturada bajo el contrato de carpetas (skills/job-seeking/capture-job-offer). NO captura ofertas ni las guarda por su cuenta.
+description: Analizar el match de una oferta ya capturada contra el CV base y generar el CV adaptado y la cover letter. Usar cuando el usuario pide "adaptar el CV a una oferta", "analizar el match", "escribir la cover letter". Requiere que la oferta esté capturada bajo el contrato de carpetas (skills/job-seeking/capture-job-offer). NO captura ofertas ni las guarda por su cuenta.
 ---
 
 # Adapt Resume to Offer
@@ -20,9 +20,8 @@ Esta skill NO captura ofertas. Su input es una oferta ya capturada por
 
 - **Dueña de**: los artefactos de análisis y adaptación de una oferta ya
   capturada: `match-report.md`, `adapted-resume.json` y `cover-letter.md`.
-- **Escribe**: esos tres archivos dentro de `docs/job-offers/<slug>/`. Match
-  report y CV adaptado también en modo app (verbatim vía prompt de guardado);
-  la cover letter la escribe la skill directo (ADR-0032).
+- **Escribe**: esos tres archivos dentro de `docs/job-offers/<slug>/`, directo
+  (la cover letter con aprobación explícita antes de escribir, ADR-0032).
 - **No toca**: `offer.md` ni el nombre de la carpeta (son de capture-job-offer),
   el perfil maestro, el banco ni el plan. Los items del backlog entran al CV
   adaptado solo con confirmación explícita.
@@ -118,14 +117,11 @@ está terminado, no al arrancar.
 
 ## Modo de operación
 
-- **Modo app**: el prompt viene de la app del CV y pide devolver SOLO un bloque
-  JSON (de análisis, de CV adaptado, o de cover letter). El usuario lo pega en la
-  app, que valida con Zod, compone los archivos y después pide el guardado
-  verbatim.
-- **Modo directo**: el usuario pide analizar, adaptar o la cover letter sin la
-  app. Aplicás los pasos completos, incluido el guardado en disco. En modo
-  directo la cover letter SIEMPRE se muestra al usuario completo y se pide su
-  aprobación explícita antes de escribir el archivo.
+Un solo modo: el usuario pide analizar, adaptar o la cover letter, aplicás los
+pasos completos y escribís los archivos en disco. La cover letter SIEMPRE se
+muestra al usuario completo y se pide su aprobación explícita antes de escribir
+el archivo. (El "modo app" — devolver JSONs para pegar en la app del CV — se
+retiró con el puente de prompts, ADR-0023 obsoleto desde el ADR-0045.)
 
 ## Pasos
 
@@ -200,23 +196,9 @@ Score de 0 a 100: requisitos cumplidos completos (peso alto), parciales (peso
 medio), no cumplidos (cero), con bonus por overscore de experiencia o skills
 extra. El score es honesto: un 60/100 está bien si los gaps son reales.
 
-### 7. Devolver el JSON de análisis (modo app)
+### 7. Componer el match report
 
-Devolver SOLO un bloque JSON fence, sin texto alrededor:
-
-```json
-{
-  "match_score": 85,
-  "match_fuerte": ["item con evidencia del CV"],
-  "gaps_parciales": ["item con explicación"],
-  "gaps_reales": ["item con evaluación honesta"],
-  "ajustes_recomendados": ["cambio concreto para el JSON adaptado"],
-  "temas_entrevista": ["tema con contexto"],
-  "score_explicacion": "desglose del score"
-}
-```
-
-En modo directo, este análisis se compone como `match-report.md` dentro de la
+El análisis se compone como  `match-report.md` dentro de la
 carpeta de la oferta, con esta forma:
 
 ```markdown
@@ -245,11 +227,7 @@ match_score: 85
 - desglose del score
 ```
 
-En modo app el contenido exacto del archivo viaja en el prompt de guardado:
-escribirlo verbatim, sin interpretar.
-
-Criterio de completado: JSON de análisis devuelto (modo app) o match-report.md
-escrito en la carpeta de la oferta (modo directo).
+Criterio de completado: `match-report.md` escrito en la carpeta de la oferta.
 
 ### 8. Generar el CV adaptado
 
@@ -277,26 +255,17 @@ estructura, mismos campos, sin campos nuevos. Reglas de contenido:
 Validar el JSON adaptado contra `src/schemas/resume.ts` con un parse de Zod
 antes de devolverlo o guardarlo.
 
-### 9. Devolver el JSON del CV adaptado (modo app)
-
-Devolver SOLO un bloque JSON fence con el JSON completo de CV adaptado (misma
-forma que resume.json: es + en).
-
-Criterio de completado: el bloque JSON es lo único en tu respuesta final y
-parsea contra el schema.
-
-### 10. Guardar en disco (modo directo)
+### 9. Guardar en disco
 
 Escribir `docs/job-offers/<slug>/adapted-resume.json` en la carpeta de la
-oferta, mismo JSON devuelto en el paso 9. En modo app, el contenido exacto
-viaja en el prompt de guardado: escribirlo verbatim.
+oferta, el JSON validado en el paso 8.
 
 Criterio de completado: `adapted-resume.json` existe en la carpeta de la
 oferta y pasa la validación de schema.
 
-### 11. Ofrecer el PDF del CV adaptado
+### 10. Ofrecer el PDF del CV adaptado
 
-En cuanto `adapted-resume.json` queda validado y guardado (paso 10), ofrecer de
+En cuanto `adapted-resume.json` queda validado y guardado (paso 9), ofrecer de
 inmediato, sin que el usuario tenga que pedirlo después, guardar el PDF del CV
 adaptado. Una sola pregunta interactiva, ya con el CV terminado:
 
@@ -305,10 +274,9 @@ adaptado. Una sola pregunta interactiva, ya con el CV terminado:
   volver a preguntar.
 - **Locale o locales**: `es`, `en` o ambos. Por defecto, el idioma de la oferta.
 
-El PDF se genera desde la vista de impresión de la app ("Mis CVs" en `/`, tab "CVs
-adaptados", con el CSS de print que oculta el sidebar y el panel de la oferta) o desde
-el export PDF de la app, para que quede igual al que el usuario obtendría imprimiendo
-a mano.
+El PDF se genera desde la vista de impresión de `/` ("Mis perfiles", con el CSS
+de print que oculta el toolbar y el sidebar), para que quede igual al que el
+usuario obtendría imprimiendo a mano.
 
 **Carpeta del día, carpeta por empresa, nombre de archivo neutro.** Un nombre de
 archivo con la empresa o el rol delata que el CV fue adaptado para esa postulación
@@ -329,13 +297,11 @@ encuentra después. La convención es:
   Apellido2" se exporta como `Apellido1 Apellido2 Nombre - CV - EN.pdf`.
 - Si se exportan los dos locales, van los dos archivos en la misma carpeta:
   `... - CV - ES.pdf` y `... - CV - EN.pdf`.
-- Si el PDF sale del export de la app (impresión del navegador o DOCX), el nombre
+- Si el PDF sale de la impresión del navegador o de un DOCX, el nombre
   que sugiere puede venir con la empresa o con el slug de la oferta: se
   reemplaza siempre por esta convención antes de guardarlo.
 - La carpeta es organización local del usuario: nada de esto toca
   `docs/job-offers/` ni cambia el estado de la oferta.
-
-En modo app este paso no aplica: la app exporta el PDF por su cuenta.
 
 Criterio de completado: se ofreció apenas el CV quedó listo y, si el usuario
 aceptó, el PDF con nombre neutro existe en `CV - <empresa>` dentro de la carpeta
@@ -366,9 +332,8 @@ adaptado (o el CV base si todavía no hay adaptado).
 
 La carta la propone esta skill como parte del flujo: cuando el CV adaptado quedó
 aprobado, se ofrece escribirla y, con la aprobación del usuario, se guarda
-directo en disco. No hay output JSON ni paso por un agente externo. La app solo
-lee `docs/job-offers/<slug>/cover-letter.md` para mostrarla y exportarla (PDF por
-impresión del navegador y DOCX), sin editarla.
+directo en disco. La app solo
+lee `docs/job-offers/<slug>/cover-letter.md` para mostrarla, sin editarla.
 
 ## Pasos de la cover letter
 
@@ -447,7 +412,7 @@ subject: ASUNTO DEL EMAIL o N/A
 
 El subject va **en el frontmatter**, nunca como heading dentro de la carta.
 Escribir el archivo directo, igual que `offer.md`, `match-report.md` y
-`adapted-resume.json` en modo directo: esta skill escribe el archivo, sin
+`adapted-resume.json`: esta skill escribe el archivo, sin
 pedirle a otro agente que lo haga ni armar prompts de guardado.
 
 Criterio de completado: `cover-letter.md` existe en la carpeta de la oferta con
@@ -468,9 +433,9 @@ lote de preguntas del final si el flujo ya iba a preguntar algo:
 - **Nombre del archivo**: `<apellidos> <nombres> - Cover Letter - <LOCALE>.pdf`,
   misma convención neutra que el CV, con el locale de la carta en mayúsculas. Si
   el usuario quiere dos locales, un archivo por locale.
-- El PDF se genera igual que el de la app: impresión del navegador o export PDF de
-  la app, con el texto aprobado tal cual quedó en `cover-letter.md`. Si el export
-  sugiere un nombre con la empresa o el slug, se reemplaza por esta convención.
+- El PDF se genera por impresión del navegador, con el texto aprobado tal cual
+  quedó en `cover-letter.md`. Si la impresión sugiere un nombre con la empresa o
+  el slug, se reemplaza por esta convención.
 
 Este PDF es organización local del usuario: no toca `docs/job-offers/`, no cambia
 el estado de la oferta y no se envía solo: cada envío requiere confirmación
@@ -488,5 +453,5 @@ si el usuario aceptó, el PDF existe en la misma carpeta que el del CV.
   como heading.
 - Mentiras por conveniencia prohibidas: si la carta menciona algo, el CV lo
   respalda.
-- La app no compone ni edita la carta: solo la muestra y la exporta (PDF por
-  impresión y DOCX). El texto aprobado es el que queda en el archivo.
+- La app no compone ni edita la carta: solo la muestra. El texto aprobado es el
+  que queda en el archivo.

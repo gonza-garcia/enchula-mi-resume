@@ -4,8 +4,6 @@ import type { ResumeLocale } from '../schemas/resume';
 import type { BilingualProjection } from '../lib/profile-projection';
 import Layout from '../layouts/Layout.astro';
 import Toolbar from './Toolbar.astro';
-import OffersManager from '../islands/offers-manager/OffersManager';
-import type { OfferView } from '../islands/offers-manager/contract';
 import { SECTION_TITLES as sectionTitles, positioningLabel, clientBlock } from '../lib/resume-sections';
 
 interface Props {
@@ -13,11 +11,8 @@ interface Props {
   positionings: Array<{ id: string; title: LocalizedText }>;
   brandName: LocalizedText;
   brandMark: string;
-  pdfTitle: string;
-  adaptedViews: OfferView[];
-  userName: string;
 }
-const { projections, positionings, brandName, brandMark, pdfTitle, adaptedViews, userName } = Astro.props;
+const { projections, positionings, brandName, brandMark } = Astro.props;
 
 const locales: Locale[] = ['en', 'es'];
 const defaultPositioning = positionings[0];
@@ -34,55 +29,75 @@ const payload = {
 ---
 
 <Layout title={`${brandName.en} - ${defaultPositioning.title.en}`}>
-  <Toolbar
-    idPrefix=""
-    brand={{ mark: brandMark, name: brandName.en, role: defaultPositioning.title.en }}
-    pdfTitle={pdfTitle}
-    showTheme={true}
-  />
+  <Toolbar brand={{ mark: brandMark, name: brandName.en, role: defaultPositioning.title.en }} />
 
-  {/* Tabs de "Mis perfiles" (Fase D): "CVs base" (default) y "CVs adaptados". Chrome de
-      pantalla, oculto en print. El estado vive en html[data-cv-tab] y en ?tab=. */}
-  <script is:inline>
-    // Deep link canonico: ?tab=adaptados (se acepta tambien ?tab=adapted).
-    const cvTabParam = new URLSearchParams(window.location.search).get('tab');
-    if (cvTabParam === 'adaptados' || cvTabParam === 'adapted') {
-      document.documentElement.setAttribute('data-cv-tab', 'adapted');
-    }
-  </script>
-  <div class="cv-tabs" role="tablist" aria-label="Mis perfiles">
-    <button type="button" class="cv-tab" role="tab" id="cv-tab-base" data-cv-tab-target="base" aria-controls="cv-panel-base" aria-selected="true">CVs base</button>
-    <button type="button" class="cv-tab" role="tab" id="cv-tab-adapted" data-cv-tab-target="adapted" aria-controls="cv-panel-adapted" aria-selected="false">CVs adaptados</button>
-  </div>
+  {/* #cv-panel-base: ancla de DOM que usan las specs de print y de tema sobre el
+      CV base. Queda del tiempo de las tabs "CVs base" / "CVs adaptados", que se
+      retiraron en la Fase H. */}
+  <div class="mp-shell">
+    {/* Sidebar de "Mis perfiles" (Fase H1): selector de perfil en lista, idioma y
+        tema. No se imprime (chrome de pantalla). El "Descargar" llega con la H3. */}
+    <aside class="mp-side" aria-label="Controles de Mis perfiles">
+      <h2 class="mp-sec">Perfiles</h2>
+      <ul class="mp-profile-list">
+        {positionings.map((positioning) => {
+          const initial = projections[positioning.id].en as ResumeLocale;
+          return (
+            <li>
+              <button
+                type="button"
+                class="mp-profile-item"
+                data-positioning={positioning.id}
+                aria-pressed={positioning.id === defaultPositioning.id ? 'true' : 'false'}
+              >
+                <span class="mp-profile-title">{positioning.title.en}</span>
+                <span class="mp-profile-summary">{initial.summary}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
 
-  <div class="cv-panel" data-tab="base" id="cv-panel-base" role="tabpanel" aria-labelledby="cv-tab-base">
-  <main class="page">
-    {/* Cards por posicionamiento (Fase D): cada card selecciona la proyeccion activa
-        del CV base y ofrece sus acciones. No se imprime (chrome de pantalla). */}
-    <section class="cv-cards" aria-label="CVs base">
-      {positionings.map((positioning) => {
-        const initial = projections[positioning.id].en as ResumeLocale;
-        return (
-          <div class="cv-card" data-positioning={positioning.id}>
-            <button
-              type="button"
-              class="cv-card-select"
-              data-positioning={positioning.id}
-              aria-pressed={positioning.id === defaultPositioning.id ? 'true' : 'false'}
-            >
-              <span class="cv-card-title">{positioning.title.en}</span>
-              <span class="cv-card-summary">{initial.summary}</span>
-            </button>
-            <div class="cv-card-actions">
-              <button type="button" class="cv-card-action" data-card-action="print">Imprimir PDF</button>
-              <button type="button" class="cv-card-action" data-card-action="export">Exportar</button>
+      <h2 class="mp-sec">Idioma</h2>
+      <div class="toggle" role="group" aria-label="Language">
+        <button type="button" id="btn-en" aria-pressed="true">EN</button>
+        <button type="button" id="btn-es" aria-pressed="false">ES</button>
+      </div>
+
+      <h2 class="mp-sec">Tema</h2>
+      <details class="theme-panel">
+        <summary>Personalizar</summary>
+        <div class="theme-controls">
+          <div class="theme-row">
+            <span class="theme-label">Accent</span>
+            <div class="theme-presets" role="radiogroup" aria-label="Accent color">
+              <button type="button" data-theme="navy" aria-pressed="false"><span class="swatch" style="background:#1a365d"></span>Navy</button>
+              <button type="button" data-theme="teal" aria-pressed="false"><span class="swatch" style="background:#0f4c4c"></span>Teal</button>
+              <button type="button" data-theme="charcoal" aria-pressed="false"><span class="swatch" style="background:#333"></span>Charcoal</button>
+              <button type="button" data-theme="custom" aria-pressed="false"><span class="swatch" data-custom-swatch></span>Custom</button>
             </div>
           </div>
-        );
-      })}
-    </section>
-    {positionings.map((positioning) => locales.map((key) => {
-      const data = projections[positioning.id][key] as ResumeLocale;
+          <div class="theme-row">
+            <label class="theme-picker" hidden>
+              <span class="theme-label" style="flex:0 0 auto">Color</span>
+              <input type="color" id="theme-custom-color" value="#1a365d" />
+            </label>
+            <span class="theme-feedback" id="theme-feedback" hidden></span>
+          </div>
+          <div class="theme-row">
+            <span class="theme-label">Apply to</span>
+            <label><input type="checkbox" data-accent="name" checked /> Name</label>
+            <label><input type="checkbox" data-accent="sections" checked /> Section headings</label>
+            <label><input type="checkbox" data-accent="urls" checked /> URLs</label>
+            <label><input type="checkbox" data-accent="skills" checked /> Skill categories</label>
+          </div>
+        </div>
+      </details>
+    </aside>
+
+    <main class="page" id="cv-panel-base">
+      {positionings.map((positioning) => locales.map((key) => {
+        const data = projections[positioning.id][key] as ResumeLocale;
       return (
         <article
           class="lang"
@@ -181,12 +196,7 @@ const payload = {
         </article>
       );
     }))}
-  </main>
-  </div>
-
-  <div class="cv-panel" data-tab="adapted" id="cv-panel-adapted" role="tabpanel" aria-labelledby="cv-tab-adapted">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown-light.css" />
-    <OffersManager client:load offers={adaptedViews} isDev={import.meta.env.DEV} userName={userName} />
+    </main>
   </div>
 
   <script type="application/json" id="resume-data" is:inline set:html={JSON.stringify(payload)}></script>
@@ -241,9 +251,6 @@ const payload = {
         art.setAttribute('aria-hidden', String(!on));
       }
 
-      (window as unknown as { __exportResume?: unknown }).__exportResume =
-        payload.projections[positioning] ?? null;
-
       const nameEl = document.querySelector<HTMLElement>('.brand-name');
       if (nameEl) nameEl.textContent = payload.brand.name[lang] ?? payload.brand.name.en;
       const roleEl = document.querySelector<HTMLElement>('.brand-role');
@@ -255,13 +262,13 @@ const payload = {
         button.setAttribute('aria-pressed', String(id === positioning));
       }
 
-      // Las cards de posicionamiento llevan estructura propia: se actualizan sus
+      // Las entradas del sidebar llevan estructura propia: se actualizan sus
       // textos al locale activo en vez de pisar el contenido del boton.
-      for (const card of document.querySelectorAll<HTMLElement>('.cv-card[data-positioning]')) {
-        const id = card.getAttribute('data-positioning') ?? '';
+      for (const item of document.querySelectorAll<HTMLElement>('.mp-profile-item')) {
+        const id = item.getAttribute('data-positioning') ?? '';
         const option = payload.positionings.find((candidate) => candidate.id === id);
-        const titleEl = card.querySelector<HTMLElement>('.cv-card-title');
-        const summaryEl = card.querySelector<HTMLElement>('.cv-card-summary');
+        const titleEl = item.querySelector<HTMLElement>('.mp-profile-title');
+        const summaryEl = item.querySelector<HTMLElement>('.mp-profile-summary');
         if (titleEl && option) titleEl.textContent = option.title[lang] ?? option.title.en;
         const projection = payload.projections[id]?.[lang] as { summary?: string } | undefined;
         if (summaryEl) summaryEl.textContent = projection?.summary ?? '';
@@ -270,71 +277,7 @@ const payload = {
 
     applyState();
 
-    // Acciones por card: imprimen o exportan el CV del posicionamiento de esa card.
-    for (const action of document.querySelectorAll<HTMLButtonElement>('[data-card-action]')) {
-      action.addEventListener('click', (e) => {
-        // El click no debe burbujear al listener global que cierra el menu de export.
-        e.stopPropagation();
-        const card = action.closest('.cv-card');
-        const main = card?.querySelector<HTMLButtonElement>('button[data-positioning]');
-        if (main && main.getAttribute('aria-pressed') !== 'true') main.click();
-        if (action.getAttribute('data-card-action') === 'print') {
-          document.querySelector<HTMLButtonElement>('[data-export="pdf"]')?.click();
-        } else {
-          document.dispatchEvent(new CustomEvent('toolbar:export-open'));
-        }
-      });
-    }
-
-    // ===== Tabs "CVs base" / "CVs adaptados" =====
-    function activeTab(): 'base' | 'adapted' {
-      return document.documentElement.getAttribute('data-cv-tab') === 'adapted' ? 'adapted' : 'base';
-    }
-
-    function selectTab(tab: 'base' | 'adapted', updateUrl = true) {
-      document.documentElement.setAttribute('data-cv-tab', tab);
-      for (const button of document.querySelectorAll<HTMLButtonElement>('[data-cv-tab-target]')) {
-        button.setAttribute('aria-selected', String(button.getAttribute('data-cv-tab-target') === tab));
-      }
-      if (updateUrl) {
-        const url = new URL(window.location.href);
-        if (tab === 'adapted') url.searchParams.set('tab', 'adaptados');
-        else url.searchParams.delete('tab');
-        window.history.replaceState({}, '', url);
-      }
-    }
-
-    // Sincroniza los botones con el estado inicial (el script inline lo leyo de ?tab=).
-    selectTab(activeTab(), false);
-
-    for (const button of document.querySelectorAll<HTMLButtonElement>('[data-cv-tab-target]')) {
-      button.addEventListener('click', () => {
-        selectTab((button.getAttribute('data-cv-tab-target') as 'base' | 'adapted') ?? 'base');
-      });
-    }
-
-    // La isla del gestor de ofertas pide volver a la tab del CV base.
-    document.addEventListener('cv:tab-select', (e) => {
-      selectTab((e as CustomEvent<{ tab: 'base' | 'adapted' }>).detail.tab);
-    });
-
     document.addEventListener('toolbar:lang-change', () => applyState());
     document.addEventListener('toolbar:positioning-change', () => applyState());
-
-    document.addEventListener('toolbar:export-json', () => {
-      // El export JSON actua sobre el documento activo: en la tab de adaptados el
-      // adapted-resume lo descarga la isla, aca solo la proyeccion del CV base.
-      if (activeTab() !== 'base') return;
-      const projection = payload.projections[currentPositioning()]?.[currentLang()];
-      const blob = new Blob([JSON.stringify(projection ?? {}, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'resume.json';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    });
   </script>
 </Layout>

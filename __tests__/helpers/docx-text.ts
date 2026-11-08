@@ -59,9 +59,9 @@ function readEntry(buffer: Buffer, entry: ZipEntry): Buffer {
   return entry.method === 8 ? zlib.inflateRawSync(data) : data;
 }
 
-/** word/document.xml del archivo, como texto XML. */
-export function docxDocumentXml(filePath: string): string {
-  const buffer = fs.readFileSync(filePath);
+/** word/document.xml del archivo o buffer, como texto XML. */
+export function docxDocumentXml(source: string | Buffer): string {
+  const buffer = typeof source === 'string' ? fs.readFileSync(source) : source;
   const entry = readEntries(buffer).find((item) => item.name === 'word/document.xml');
   if (!entry) throw new Error('docx: falta word/document.xml');
   return readEntry(buffer, entry).toString('utf8');
@@ -79,8 +79,8 @@ function decodeEntities(value: string): string {
 }
 
 /** Texto del documento, un renglon por parrafo: lo que lee un extractor ATS. */
-export function docxText(filePath: string): string {
-  return docxDocumentXml(filePath)
+export function docxText(source: string | Buffer): string {
+  return docxDocumentXml(source)
     .split('</w:p>')
     .map((paragraph) =>
       decodeEntities(

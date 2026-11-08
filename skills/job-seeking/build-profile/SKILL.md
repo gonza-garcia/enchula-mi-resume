@@ -1,6 +1,6 @@
 ---
 name: build-profile
-description: Entrevistar a la persona usuaria y escribir su perfil maestro en src/content/profile.json bajo el schema del repo. Usar cuando el usuario pide "armar mi perfil", "crear mi CV maestro", "onboarding", "entrevistarme para el perfil", o cuando la app del CV genera un prompt que referencia esta skill. Produce identidad, hechos, skills como entidad y los dos posicionamientos (frontend y AI), con cada campo de texto en es y en. NO captura ofertas ni adapta CVs: para eso están capture-job-offer y adapt-resume-to-offer.
+description: Entrevistar a la persona usuaria y escribir su perfil maestro en src/content/profile.json bajo el schema del repo. Usar cuando el usuario pide "armar mi perfil", "crear mi CV maestro", "onboarding", "entrevistarme para el perfil". Produce identidad, hechos, skills como entidad y los dos posicionamientos (frontend y AI), con cada campo de texto en es y en. NO captura ofertas ni adapta CVs: para eso están capture-job-offer y adapt-resume-to-offer.
 ---
 
 # Build Profile
@@ -16,28 +16,20 @@ un documento que pasa la validación Zod del build (`src/schemas/profile.ts`).
 - **Dueña de**: el contrato del perfil maestro (`src/content/profile.json`,
   schema `src/schemas/profile.ts`, ADR-0026). El detalle de las capas está en
   la sección "Contrato" más abajo.
-- **Escribe**: solo `src/content/profile.json` (modo directo, o verbatim vía
-  prompt de guardado en modo app). En modo app devuelve el JSON y no escribe.
+- **Escribe**: solo `src/content/profile.json`.
 - **No toca**: ofertas (`docs/job-offers/`), el banco de entrevistas, el plan de
   estudios ni los CVs adaptados.
 
 ## Modo de operación
 
-La skill corre en dos modos, decididos por quien la invoca:
-
-- **Modo app**: el prompt viene de la app del CV y pide devolver SOLO un bloque
-  JSON con el perfil completo. El usuario lo pega en la app, que valida y después
-  pide el guardado verbatim. No escribas archivos en este modo salvo que el prompt
-  lo pida explícitamente.
-- **Modo directo**: el usuario pide armar y guardar su perfil. Aplicás todos los
-  pasos, incluido el guardado en disco.
-
-El output JSON del modo app y el archivo guardado en modo directo producen la
-misma información: mismos campos, mismos formatos, mismo destino.
+Un solo modo: el usuario pide armar y guardar su perfil, y aplicás todos los
+pasos, incluido el guardado en disco. (El "modo app" — devolver un JSON para
+pegar en la app del CV — se retiró con el puente de prompts, ADR-0023 obsoleto
+desde el ADR-0045: la app se opera con un agente corriendo las skills.)
 
 ## Contrato
 
-El perfil es la fuente única de datos del CV, del export JSON y de /learning.
+El perfil es la fuente única de datos del CV y de /learning.
 Antes de entrevistar, leer `src/schemas/profile.ts` (el contrato exacto) y
 `src/content/profile.example.json` (una forma completa de referencia, con persona
 ficticia). No inventar campos fuera del schema.
@@ -152,115 +144,9 @@ y los dos locales resueltos.
 - **Ambos locales**: cada campo de texto con sus dos variantes, sin excepciones.
 
 Criterio de completado: el documento pasa `profileSchema` (se confirma en el
-paso 5).
+paso 4).
 
-### 4. Devolver el JSON (modo app)
-
-Devolver SOLO un bloque JSON fence, sin texto alrededor, con el perfil completo.
-La forma exacta es la de `src/schemas/profile.ts`; esta es la estructura:
-
-```json
-{
-  "identity": {
-    "name": { "es": "...", "en": "..." },
-    "contact": {
-      "phone": "...",
-      "email": "...",
-      "location": { "es": "...", "en": "..." },
-      "linkedin": "...",
-      "github": "..."
-    }
-  },
-  "facts": {
-    "experience": [
-      {
-        "company": { "es": "...", "en": "..." },
-        "role": { "es": "...", "en": "..." },
-        "startDate": { "es": "...", "en": "..." },
-        "endDate": { "es": "...", "en": "..." },
-        "location": { "es": "...", "en": "..." },
-        "projects": [
-          {
-            "name": { "es": "...", "en": "..." },
-            "url": "...",
-            "startDate": { "es": "...", "en": "..." },
-            "endDate": { "es": "...", "en": "..." },
-            "bullets": [
-              {
-                "id": "kebab-id",
-                "text": { "es": "...", "en": "..." },
-                "skillIds": ["skill-id"]
-              }
-            ]
-          }
-        ]
-      }
-    ],
-    "education": [
-      {
-        "institution": { "es": "...", "en": "..." },
-        "degree": { "es": "...", "en": "..." },
-        "startDate": { "es": "...", "en": "..." },
-        "endDate": { "es": "...", "en": "..." },
-        "note": { "es": "...", "en": "..." }
-      }
-    ],
-    "certifications": [
-      { "name": { "es": "...", "en": "..." }, "note": { "es": "...", "en": "..." } }
-    ],
-    "languages": [
-      {
-        "name": { "es": "...", "en": "..." },
-        "level": { "es": "...", "en": "..." },
-        "evidence": { "es": "...", "en": "..." }
-      }
-    ],
-    "projects": [
-      {
-        "name": { "es": "...", "en": "..." },
-        "url": "...",
-        "date": { "es": "...", "en": "..." },
-        "description": { "es": "...", "en": "..." },
-        "skillIds": ["skill-id"]
-      }
-    ]
-  },
-  "skills": [
-    {
-      "id": "kebab-id",
-      "name": { "es": "...", "en": "..." },
-      "category": { "es": "...", "en": "..." },
-      "level": { "es": "...", "en": "..." },
-      "evidence": { "es": "...", "en": "..." }
-    }
-  ],
-  "positionings": [
-    {
-      "id": "frontend",
-      "title": { "es": "...", "en": "..." },
-      "summary": { "es": "...", "en": "..." },
-      "skillIds": ["skill-id"],
-      "bulletIds": ["bullet-id"]
-    },
-    {
-      "id": "ai",
-      "title": { "es": "...", "en": "..." },
-      "summary": { "es": "...", "en": "..." },
-      "skillIds": ["skill-id"],
-      "bulletIds": ["bullet-id"]
-    }
-  ]
-}
-```
-
-Los campos opcionales del schema (`location` de experiencia, `url`, `note`,
-`evidence`, `date` y `skillIds`) se omiten cuando no aplican. Los id de
-posicionamiento son exactamente `frontend` y `ai`. Sin em-dashes, en-dashes ni
-flechas en el contenido: usar guiones simples, comas o palabras.
-
-Criterio de completado: el bloque JSON es lo único en tu respuesta final.
-
-### 5. Guardar en disco (modo directo, o cuando el prompt de la app lo pida)
+### 4. Guardar en disco
 
 Contrato de guardado:
 
@@ -274,11 +160,8 @@ Contrato de guardado:
   ruidosamente con ids huérfanos, ids duplicados o campos sin los dos locales, y
   el error lista los issues. Corregir y reintentar hasta que pase.
 
-En modo app, el contenido exacto del archivo viaja en el prompt de guardado:
-escribirlo verbatim, sin interpretar ni mejorar nada.
-
 Criterio de completado: `src/content/profile.json` existe en disco y el build
-pasa, o en modo app el JSON fue devuelto.
+pasa.
 
 ## Comunicación con el usuario
 

@@ -22,7 +22,7 @@ test.describe('Print PDF - no browser headers/footers', () => {
     expect(printRules.webkitBoxDecorationBreak).toBe('clone');
   });
 
-  test('print media hides toolbar and theme panel', async ({ page }) => {
+  test('print media hides toolbar and sidebar', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('.toolbar')).toBeVisible();
     const printStyles = await page.evaluate(() => {
@@ -105,72 +105,5 @@ test.describe('Print PDF - no browser headers/footers', () => {
         .map((article) => `${article.getAttribute('data-positioning')}:${article.getAttribute('data-lang')}`)
     );
     expect(switched).toEqual(['ai:es']);
-  });
-
-  test('adapted page print hides sidebar, offer panel, and split-headers', async ({ page }) => {
-    await page.goto('/?tab=adaptados');
-    const printCss = await page.evaluate(() => {
-      const blocks: string[] = [];
-      for (const sheet of Array.from(document.styleSheets)) {
-        try {
-          for (const rule of Array.from(sheet.cssRules || [])) {
-            if (rule instanceof CSSMediaRule && rule.media.mediaText.includes('print')) {
-              blocks.push(Array.from(rule.cssRules).map((innerRule) => innerRule.cssText).join('\n'));
-            }
-          }
-        } catch {}
-      }
-      return blocks.join('\n');
-    });
-
-    expect(printCss).toContain('.offer-sidebar');
-    expect(printCss).toContain('.split-left');
-    expect(printCss).toContain('.split-header');
-    expect(printCss).toMatch(/display:\s*none/);
-  });
-
-  test('el dialogo de PDF sugiere el nombre base en /', async ({ page }) => {
-    await page.addInitScript(() => {
-      window.print = () => {
-        (window as unknown as { __printedTitle?: string }).__printedTitle = document.title;
-      };
-    });
-    await page.goto('/');
-    await page.locator('#btn-export').click();
-    await page.locator('[data-export="pdf"]').click();
-    const title = await page.evaluate(
-      () => (window as unknown as { __printedTitle?: string }).__printedTitle
-    );
-    expect(title).toBe('Montiel Ariana - CV - EN');
-
-    await page.locator('#btn-es').click();
-    await page.locator('#btn-export').click();
-    await page.locator('[data-export="pdf"]').click();
-    const titleEs = await page.evaluate(
-      () => (window as unknown as { __printedTitle?: string }).__printedTitle
-    );
-    expect(titleEs).toBe('Montiel Ariana - CV - ES');
-  });
-
-  test('el dialogo de PDF sugiere el nombre neutro, sin empresa, en la tab de adaptados', async ({ page }) => {
-    await page.addInitScript(() => {
-      window.print = () => {
-        (window as unknown as { __printedTitle?: string }).__printedTitle = document.title;
-      };
-    });
-    await page.goto('/?tab=adaptados');
-    await page.waitForFunction(
-      () => document.documentElement.getAttribute('data-offers-hydrated') === 'true'
-    );
-    await page.locator('.offer-card').filter({ hasText: 'Nimbus Software' }).click();
-    await page.locator('#btn-export').click();
-    await page.locator('[data-export="pdf"]').click();
-    const title = await page.evaluate(
-      () => (window as unknown as { __printedTitle?: string }).__printedTitle
-    );
-    // ADR-0036: el nombre de archivo no lleva empresa ni rol, para no delatar
-    // que el CV esta adaptado para esa postulacion.
-    expect(title).toBe('Montiel Ariana - CV - EN');
-    expect(title).not.toContain('Nimbus');
   });
 });

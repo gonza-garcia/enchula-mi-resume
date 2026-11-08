@@ -36,6 +36,13 @@ export interface OfferRow {
   application: Application | null;
   offerHtml: string;
   offerRaw: string;
+  /**
+   * Match report de la carpeta (`match-report.md`), el analisis honesto de la
+   * oferta con sus gaps. Rescatado de la antigua tab "CVs adaptados" (Fase H,
+   * H1a) como vista del visor.
+   */
+  reportHtml: string | null;
+  reportRaw: string | null;
   coverHtml: string | null;
   coverRaw: string | null;
   adaptedResume: Resume | null;
@@ -79,10 +86,11 @@ export const ESTADO_FILTERS: { key: EstadoFilter; label: string }[] = [
   { key: 'descartada', label: 'Descartadas' }
 ];
 
-export type ViewerView = 'oferta' | 'cv' | 'cover' | 'postulacion';
+export type ViewerView = 'oferta' | 'report' | 'cv' | 'cover' | 'postulacion';
 
 export const VIEWER_VIEWS: { key: ViewerView; label: string }[] = [
   { key: 'oferta', label: 'Oferta original' },
+  { key: 'report', label: 'Match report' },
   { key: 'cv', label: 'CV adaptado' },
   { key: 'cover', label: 'Cover letter' },
   { key: 'postulacion', label: 'Postulación' }

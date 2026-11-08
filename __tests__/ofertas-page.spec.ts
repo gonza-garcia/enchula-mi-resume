@@ -183,26 +183,59 @@ test.describe('Ofertas: variante D como producto', () => {
     await expect(page.locator('.of-card').nth(1)).toHaveClass(/sel/);
   });
 
-  test('el segmented del visor tiene las 4 vistas', async ({ page }) => {
+  test('H1b: el deep link ?oferta=<slug> selecciona la oferta y la URL la sigue', async ({
+    page
+  }) => {
+    await page.goto(`/ofertas/?oferta=${AURORA}`);
+    await page.waitForFunction(
+      () => document.documentElement.getAttribute('data-ofertas-hydrated') === 'true'
+    );
+    await expect(page.locator('.of-card.sel')).toContainText('Aurora Labs');
+
+    // al elegir otra card la URL la sigue, para que la vista sea compartible
+    await page.locator('.of-card').nth(0).click();
+    await expect(page.locator('.of-card.sel')).toContainText('Nimbus Software');
+    await expect(page).toHaveURL(new RegExp(`oferta=${NIMBUS}`));
+  });
+
+  test('el segmented del visor tiene las 5 vistas', async ({ page }) => {
     await gotoOfertas(page);
     const tabs = page.locator('.of-segmented [role="tab"]');
-    await expect(tabs).toHaveCount(4);
+    await expect(tabs).toHaveCount(5);
     await expect(tabs.nth(0)).toHaveText('Oferta original');
-    await expect(tabs.nth(1)).toHaveText('CV adaptado');
-    await expect(tabs.nth(2)).toHaveText('Cover letter');
-    await expect(tabs.nth(3)).toHaveText(/Postulaci/);
+    await expect(tabs.nth(1)).toHaveText('Match report');
+    await expect(tabs.nth(2)).toHaveText('CV adaptado');
+    await expect(tabs.nth(3)).toHaveText('Cover letter');
+    await expect(tabs.nth(4)).toHaveText(/Postulaci/);
+  });
+
+  test('vista Match report: el analisis de la carpeta, rescatado de la tab CVs adaptados', async ({
+    page
+  }) => {
+    await gotoOfertas(page);
+    await page.getByRole('tab', { name: 'Match report' }).click();
+    // nimbus es la primera del feed y trae match-report.md en su carpeta.
+    await expect(page.locator('.of-pane .of-prose')).toContainText('Análisis de match');
+    await expect(page.locator('.of-pane .of-prose')).toContainText('Match fuerte');
+    await expect(page.locator('.of-pane .of-prose')).not.toContainText('Sin match-report.md');
+
+    // el menu de tres puntos baja el archivo de la vista activa
+    await page.locator('button[aria-label="Más acciones"]').click();
+    const downloadPromise = page.waitForEvent('download');
+    await page.locator('.of-menu-item', { hasText: 'Descargar' }).click();
+    expect((await downloadPromise).suggestedFilename()).toBe('match-report.md');
   });
 
   test('vista CV adaptado muestra el CV de la carpeta', async ({ page }) => {
     await gotoOfertas(page);
-    await page.locator('.of-segmented [role="tab"]').nth(1).click();
-    await expect(page.locator('.of-cv .of-cv-name')).toHaveText('Ariana Montiel');
+    await page.locator('.of-segmented [role="tab"]').nth(2).click();
+    await expect(page.locator('.of-cv h1')).toHaveText('Ariana Montiel');
     await expect(page.locator('.of-cv')).toContainText('real-time analytics');
   });
 
   test('vista Cover letter: texto si existe y estado vacio si no', async ({ page }) => {
     await gotoOfertas(page);
-    await page.locator('.of-segmented [role="tab"]').nth(2).click();
+    await page.locator('.of-segmented [role="tab"]').nth(3).click();
     await expect(page.locator('.of-prose')).toContainText('Hi Nimbus team');
     await page.locator('.of-card').nth(1).click();
     await expect(page.locator('.of-pane')).toContainText('Sin cover-letter.md en la carpeta de la oferta.');
@@ -210,7 +243,7 @@ test.describe('Ofertas: variante D como producto', () => {
 
   test('vista Postulacion de una descartada: estado, motivo y sin documentos', async ({ page }) => {
     await gotoOfertas(page);
-    await page.locator('.of-segmented [role="tab"]').nth(3).click();
+    await page.locator('.of-segmented [role="tab"]').nth(4).click();
     await expect(page.locator('.of-pane .of-badge')).toHaveText('descartada');
     await expect(page.locator('.of-pane')).toContainText(
       'La vacante exige reubicacion y guardias on-call obligatorias: veto del usuario.'
@@ -223,7 +256,7 @@ test.describe('Ofertas: variante D como producto', () => {
   test('vista Postulacion de una confirmada: confirmacion del ATS y documentos', async ({ page }) => {
     await gotoOfertas(page);
     await page.locator('.of-card').nth(1).click();
-    await page.locator('.of-segmented [role="tab"]').nth(3).click();
+    await page.locator('.of-segmented [role="tab"]').nth(4).click();
     await expect(page.locator('.of-pane .of-badge')).toHaveText('confirmada');
     await expect(page.locator('.of-pane')).toContainText('ApplyFlow');
     await expect(page.locator('.of-quote')).toContainText('Thanks for applying to Aurora Labs!');
@@ -240,7 +273,7 @@ test.describe('Ofertas: variante D como producto', () => {
   }) => {
     await gotoOfertas(page);
     // nimbus es la primera del feed y trae url + url_alternativa con nota.
-    await page.locator('.of-segmented [role="tab"]').nth(3).click();
+    await page.locator('.of-segmented [role="tab"]').nth(4).click();
     const links = page.locator('.of-pane a.btn');
     await expect(links).toHaveCount(2);
     await expect(links.nth(0)).toHaveText('Abrir oferta');
@@ -285,7 +318,7 @@ test.describe('Ofertas: variante D como producto', () => {
     await page.locator('.of-menu-item', { hasText: 'Descargar' }).click();
     expect((await downloadPromise).suggestedFilename()).toBe('offer.md');
 
-    await page.locator('.of-segmented [role="tab"]').nth(3).click();
+    await page.locator('.of-segmented [role="tab"]').nth(4).click();
     await page.locator('button[aria-label="Más acciones"]').click();
     const downloadApp = page.waitForEvent('download');
     await page.locator('.of-menu-item', { hasText: 'Descargar' }).click();
@@ -359,19 +392,6 @@ test.describe('Ofertas: variante D como producto', () => {
     await sidebarItem(page, 'Top matches').click();
     await expect(page.locator('.of-card')).toHaveCount(1);
     await expect(page.locator('.of-card')).toContainText('Aurora Labs');
-  });
-
-  test('+ Agregar perfil abre el puente de prompts a build-profile', async ({ page }) => {
-    await gotoOfertas(page);
-    await sidebarItem(page, 'Agregar perfil').click();
-    const dialog = page.locator('[role="dialog"]', { hasText: 'Agregar perfil' });
-    await expect(dialog).toBeVisible();
-    await expect(dialog.locator('textarea')).toHaveValue(
-      /skills\/job-seeking\/build-profile\/SKILL\.md/
-    );
-    await expect(dialog.locator('button', { hasText: 'Copiar' })).toBeVisible();
-    await dialog.locator('button[aria-label="Cerrar"]').click();
-    await expect(dialog).toHaveCount(0);
   });
 });
 

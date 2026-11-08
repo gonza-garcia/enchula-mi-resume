@@ -1,34 +1,10 @@
 ---
 import Resume from '../components/Resume.astro';
-import { listOffers, readOfferDetail, stripFrontmatter, parseCoverLetterFile, type OfferListing } from '../lib/job-offers';
-import { resumeSchema } from '../schemas/resume';
 import { loadProfile, nameInitials } from '../lib/profile';
 import { projectAllPositionings } from '../lib/profile-projection';
-import { fileAsName } from '../lib/file-name';
-import { marked } from 'marked';
 
 const { profile } = loadProfile();
 const projections = projectAllPositionings(profile);
-// Nombre de archivo neutro: sin empresa ni rol (ADR-0036).
-const pdfTitle = `${fileAsName(profile.identity.name.en)} - CV`;
-
-// Tab "CVs adaptados": el gestor de ofertas lista exactamente lo que hay en disco
-// (ADR-0022). En el build generico solo entran ofertas demo (ADR-0033).
-const listings: OfferListing[] = listOffers();
-const adaptedViews = listings.map((listing) => {
-  const detail = readOfferDetail(listing.slug);
-  const offerHtml = marked.parse(stripFrontmatter(detail?.offerRaw ?? '')) as string;
-  const reportHtml = detail?.reportRaw
-    ? (marked.parse(stripFrontmatter(detail.reportRaw)) as string)
-    : null;
-  let adaptedResume = null;
-  if (detail?.adaptedResume) {
-    const parsed = resumeSchema.safeParse(detail.adaptedResume);
-    if (parsed.success) adaptedResume = parsed.data;
-  }
-  const coverLetter = detail?.coverLetterRaw ? parseCoverLetterFile(detail.coverLetterRaw) : null;
-  return { listing, offerHtml, reportHtml, adaptedResume, coverLetter };
-});
 ---
 
 <Resume
@@ -39,7 +15,4 @@ const adaptedViews = listings.map((listing) => {
   }))}
   brandName={profile.identity.name}
   brandMark={nameInitials(profile.identity.name.en)}
-  pdfTitle={pdfTitle}
-  adaptedViews={adaptedViews}
-  userName={profile.identity.name.en}
 />

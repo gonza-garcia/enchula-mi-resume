@@ -3,8 +3,7 @@ name: register-sweep
 description: Registrar un barrido de busqueda de ofertas y actualizar el playbook de sus
   fuentes: escribir docs/job-search/sweeps/<YYYY-MM-DD>-<id>.json con las fuentes
   barridas, las vacantes encontradas (id estable + estado) y las particularidades nuevas
-  del proceso de captura. Usar cuando el usuario termine un barrido y pida registrarlo,
-  o cuando la app del CV genere un prompt que referencia esta skill. NO captura ofertas
+  del proceso de captura. Usar cuando el usuario termine un barrido y pida registrarlo. NO captura ofertas
   (eso es capture-job-offer) ni ejecuta la busqueda: solo registra lo encontrado.
 ---
 
@@ -29,10 +28,10 @@ actualizan el playbook de la fuente. Deja el registro en
 
 ## Modo de operación
 
-- **Modo app**: el prompt pide devolver SOLO un bloque JSON del barrido. No escribas
-  archivos salvo que el prompt lo pida explícitamente.
-- **Modo directo**: el usuario pide registrar el barrido. Aplicás todos los pasos,
-  incluido el guardado en disco y la validación en build.
+Un solo modo: el usuario pide registrar el barrido, aplicás todos los pasos y
+escribís los archivos en disco, con la validación en build. (El "modo app" —
+devolver un JSON para pegar en la app del CV — se retiró con el puente de
+prompts, ADR-0023 obsoleto desde el ADR-0045.)
 
 ## Alcance de cada barrido
 
@@ -91,7 +90,7 @@ descartada`), `motivo` presente en toda descartada, `sourceId` existente en el c
 `capturadas` = slugs reales de `docs/job-offers/`, fechas `YYYY-MM-DD` y textos en
 español sin em-dashes, en-dashes ni flechas.
 
-### 5. Guardar en disco (modo directo, o cuando el prompt de la app lo pida)
+### 5. Guardar en disco
 
 Escribir `docs/job-search/sweeps/<YYYY-MM-DD>-<id>.json` con esta forma y correr
 `pnpm run check && pnpm run build` para validar:

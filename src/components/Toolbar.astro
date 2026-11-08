@@ -1,11 +1,6 @@
 ---
 import SiteNav from './SiteNav.astro';
 
-interface ExportItem {
-  value: string;
-  label: string;
-}
-
 export interface ToolbarBrand {
   mark: string;
   name: string;
@@ -13,29 +8,10 @@ export interface ToolbarBrand {
 }
 
 interface Props {
-  idPrefix?: string;
   brand: ToolbarBrand;
-  pdfTitle: string;
-  exportItems?: ExportItem[];
-  showTheme?: boolean;
-  showLang?: boolean;
 }
 
-const {
-  idPrefix = '',
-  brand,
-  pdfTitle,
-  exportItems = [
-    { value: 'pdf', label: 'PDF' },
-    { value: 'docx', label: 'DOCX' },
-    { value: 'json', label: 'JSON' },
-    { value: 'linkedin', label: 'LinkedIn Sections' }
-  ],
-  showTheme = false,
-  showLang = true
-} = Astro.props;
-
-const p = idPrefix;
+const { brand } = Astro.props;
 
 // Aviso no invasivo del modo de build: nunca en dev (que es la app viva con los
 // datos reales del usuario y no es un artefacto publicable).
@@ -46,53 +22,9 @@ const buildNotice = import.meta.env.DEV
     : { key: 'demo', text: 'Datos de ejemplo, no son datos reales.' };
 ---
 
-<div class="toolbar" role="toolbar" aria-label="Site controls" data-pdf-title={pdfTitle}>
+<div class="toolbar" role="toolbar" aria-label="Site controls">
   <SiteNav brand={brand} />
   <div class="spacer"></div>
-  {showLang && (
-    <div class="toggle" role="group" aria-label="Language">
-      <button type="button" id={`${p}btn-en`} aria-pressed="true">EN</button>
-      <button type="button" id={`${p}btn-es`} aria-pressed="false">ES</button>
-    </div>
-  )}
-  <div class="export-dropdown">
-    <button type="button" id={`${p}btn-export`} aria-haspopup="true" aria-expanded="false">Export to <span class="caret">▾</span></button>
-    <div class="export-menu" role="menu" hidden>
-      {exportItems.map((item) => (
-        <button type="button" role="menuitem" data-export={item.value}>{item.label}</button>
-      ))}
-    </div>
-  </div>
-  {showTheme && (
-    <details class="theme-panel">
-      <summary>Theme</summary>
-      <div class="theme-controls">
-        <div class="theme-row">
-          <span class="theme-label">Accent</span>
-          <div class="theme-presets" role="radiogroup" aria-label="Accent color">
-            <button type="button" data-theme="navy" aria-pressed="false"><span class="swatch" style="background:#1a365d"></span>Navy</button>
-            <button type="button" data-theme="teal" aria-pressed="false"><span class="swatch" style="background:#0f4c4c"></span>Teal</button>
-            <button type="button" data-theme="charcoal" aria-pressed="false"><span class="swatch" style="background:#333"></span>Charcoal</button>
-            <button type="button" data-theme="custom" aria-pressed="false"><span class="swatch" data-custom-swatch></span>Custom</button>
-          </div>
-        </div>
-        <div class="theme-row">
-          <label class="theme-picker" hidden>
-            <span class="theme-label" style="flex:0 0 auto">Color</span>
-            <input type="color" id="theme-custom-color" value="#1a365d" />
-          </label>
-          <span class="theme-feedback" id="theme-feedback" hidden></span>
-        </div>
-        <div class="theme-row">
-          <span class="theme-label">Apply to</span>
-          <label><input type="checkbox" data-accent="name" checked /> Name</label>
-          <label><input type="checkbox" data-accent="sections" checked /> Section headings</label>
-          <label><input type="checkbox" data-accent="urls" checked /> URLs</label>
-          <label><input type="checkbox" data-accent="skills" checked /> Skill categories</label>
-        </div>
-      </div>
-    </details>
-  )}
   {buildNotice && (
     <span class="build-notice" role="status" data-build-notice={buildNotice.key}>
       <span class="build-notice-text">{buildNotice.text}</span>

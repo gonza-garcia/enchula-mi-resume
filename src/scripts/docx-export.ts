@@ -1,11 +1,16 @@
-import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, TextRun } from 'docx';
+import { AlignmentType, Document, HeadingLevel, Paragraph, TextRun } from 'docx';
 import type { ResumeLocale } from '../schemas/resume';
 import { clientBlock } from '../lib/resume-sections';
 
 /**
- * Export a DOCX del CV y de la cover letter, todo del lado del cliente.
+ * Builder del DOCX del CV (funcion pura, sin UI).
  * Recibe la proyeccion del perfil o el CV adaptado (misma forma que resumeSchema)
  * y arma un documento simple, sin estilos de marca.
+ *
+ * La app no exporta nada entre la H1 y la H3 (Fase H): el export con UI se retiro
+ * entero y esta funcion se conserva para no perder el contrato ATS v4 del DOCX,
+ * protegido por unit test contra el Packer (__tests__/ats-format.spec.ts). La capa
+ * de descarga vuelve con el dialogo "Descargar" de la H3.
  */
 
 function text(value: string): Paragraph {
@@ -126,60 +131,4 @@ export function buildResumeDocx(resume: ResumeLocale, locale: 'en' | 'es' = 'en'
     title: `${resume.name} - ${resume.title}`,
     sections: [{ children }]
   });
-}
-
-/** Cover letter (texto plano con parrafos separados por linea en blanco) a DOCX. */
-export function buildCoverLetterDocx(input: {
-  subject: string | null;
-  letter: string;
-  empresa: string;
-  rol: string;
-}): Document {
-  const children: Paragraph[] = [];
-  if (input.subject) {
-    children.push(
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        children: [new TextRun({ text: input.subject, bold: true, size: 26 })]
-      })
-    );
-    children.push(emptyLine());
-  }
-  for (const para of input.letter.split(/\n{2,}/)) {
-    if (para.trim()) children.push(text(para.trim()));
-  }
-  return new Document({
-    creator: 'Cover letter',
-    title: `${input.empresa} - ${input.rol}`,
-    sections: [{ children }]
-  });
-}
-
-/** Descarga un blob como archivo. */
-export function downloadBlob(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-export async function downloadResumeDocx(
-  resume: ResumeLocale,
-  filename: string,
-  locale: 'en' | 'es' = 'en'
-): Promise<void> {
-  const blob = await Packer.toBlob(buildResumeDocx(resume, locale));
-  downloadBlob(blob, filename);
-}
-
-export async function downloadCoverLetterDocx(
-  input: { subject: string | null; letter: string; empresa: string; rol: string },
-  filename: string
-): Promise<void> {
-  const blob = await Packer.toBlob(buildCoverLetterDocx(input));
-  downloadBlob(blob, filename);
 }

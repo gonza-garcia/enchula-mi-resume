@@ -7,8 +7,8 @@ Guía breve para agentes que trabajen en este producto de CV e interview prep.
 Las skills del flujo de trabajo viven en el repo, en `skills/job-seeking/`:
 
 - `build-profile/SKILL.md`: entrevista a la persona usuaria y escribe su perfil maestro en
-  `src/content/profile.json` (schema de `src/schemas/profile.ts`), con modo app (output JSON) y
-  modo directo (guardado y validación en build). Es el onboarding de un usuario nuevo.
+  `src/content/profile.json` (schema de `src/schemas/profile.ts`), con guardado y
+  validación en build. Es el onboarding de un usuario nuevo.
 - `capture-job-offer/SKILL.md`: obtiene una oferta (del link con estrategia de
   fetch con fallbacks, o del texto pegado), extrae metadata y la guarda bajo el
   contrato de carpetas. Es la dueña del contrato: `docs/job-offers/<slug>/` con
@@ -23,8 +23,8 @@ Las skills del flujo de trabajo viven en el repo, en `skills/job-seeking/`:
 - `content-designer/SKILL.md`: deriva tricky follow-ups y quizzes (MCQs y
   escenarios de código) del banco ya validado, por área o por fase del plan.
 - `capture-learning-plan/SKILL.md`: captura el plan de estudios del usuario y lo
-  escribe como `src/content/learning-plan.json` (contrato de ADR-0028), con modo
-  app (output JSON) y modo directo (guardado y validación en build).
+  escribe como `src/content/learning-plan.json` (contrato de ADR-0028), con
+  guardado y validación en build.
 - `build-interview-review-plan/SKILL.md`: arma el plan de repaso de una oferta
   cruzando los "Temas a repasar" de su `match-report.md` contra el banco de
   preguntas, y lo guarda como `docs/job-offers/<slug>/interview-review-plan.json`
@@ -42,10 +42,10 @@ escribir un archivo, leer esa sección en la skill dueña de su contrato.
 El estado de una oferta se deriva de la presencia de archivos: Agregada (offer.md),
 Analizada (match-report.md), Adaptada (adapted-resume.json) y Postulada
 (`application.md`, con su estado del contrato: borrador, enviada, confirmada o
-descartada). El gestor de ofertas en la tab "CVs adaptados" de
-"Mis perfiles" (`/`) lista exactamente lo que hay en disco, y la vista `/ofertas`
-muestra los resultados del pipeline con filtros por estado y perfil (ADR-0042 y
-ADR-0044).
+descartada). La vista `/ofertas` lista exactamente lo que hay en disco y muestra
+los resultados del pipeline con filtros por estado y perfil (ADR-0042 y
+ADR-0044). La app no tiene flujos de creación: se opera con un agente de IA
+corriendo las skills, que escriben los archivos y validan en build (ADR-0045).
 
 ## Agent skills
 
@@ -72,8 +72,8 @@ confiable"); las demás skills que procesan input externo la referencian.
 - El perfil del usuario vive en `src/content/profile.json` (dato del usuario: nunca viaja al repo público) y el ejemplo ficticio
   commiteado es `src/content/profile.example.json`. El build usa el local si existe y cae al
   ejemplo si no (ADR-0026). El schema está en `src/schemas/profile.ts` y se valida en build.
-- `/` renderiza la proyección del perfil (posicionamiento más locale); el export JSON descarga
-  la proyección activa. `src/content/resume.json` dejó de ser fuente: es contenido heredado
+- `/` renderiza la proyección del perfil (posicionamiento más locale), con su sidebar de
+  perfil, idioma y tema. `src/content/resume.json` dejó de ser fuente: es contenido heredado
   que puede usarse como material de la entrevista de `build-profile`, y el perfil es lo que se
   escribe.
 - El plan de estudios vive en `src/content/learning-plan.json` (dato del usuario: nunca viaja al repo público) con su ejemplo
@@ -92,22 +92,18 @@ confiable"); las demás skills que procesan input externo la referencian.
 
 1. Clonar el repo, `pnpm install` y `pnpm run dev`: se ve el CV demo ficticio
    (`src/content/profile.example.json`) funcionando sin datos personales.
-2. Ejecutar `skills/job-seeking/build-profile/SKILL.md` en modo directo: la entrevista cubre
+2. Ejecutar `skills/job-seeking/build-profile/SKILL.md`: la entrevista cubre
    identidad, hechos (experiencia, educación, certificaciones, idiomas y proyectos), skills
    como entidad y los posicionamientos, con cada campo de texto en es y en.
 3. La skill guarda `src/content/profile.json` (dato del usuario: nunca viaja al repo público) y valida con `pnpm run build`.
 4. Verificar con `pnpm run check && pnpm run build && pnpm run test`.
 
-En modo app (prompt de la app o de un agente externo), la entrevista devuelve el perfil como un
-único bloque JSON para pegar y guardar después, con el mismo destino.
-
 ## Stack
 
 - Astro 7 como generador estático.
 - Zod para validar los contratos (perfil, plan, banco) durante el build.
-- JavaScript vanilla para el CV principal, toggle, exports y temas.
-- React 19 en las islas interactivas: la tab "CVs adaptados" de "Mis CVs" (`/`),
-  `/interview` y `/learning`.
+- JavaScript vanilla para el CV principal, toggle y temas.
+- React 19 en las islas interactivas: `/ofertas`, `/interview` y `/learning`.
 - Shiki para pre-renderizar los bloques de código de interview prep durante el build.
 
 ## Comandos
@@ -142,7 +138,7 @@ src/
     Resume.astro
     Toolbar.astro
   islands/
-    offers-manager/
+    offers-view/
     interview-prep/
     learning-plan/
   layouts/
@@ -155,6 +151,7 @@ src/
   pages/
     index.astro
     ofertas.astro
+    fuentes.astro
     interview.astro
     learning.astro
   schemas/
@@ -200,5 +197,7 @@ lo define la instancia.
 - El modelo no lee PDFs adjuntos: extraer texto con pypdf (`python` con `pypdf` instalado).
 - Puertos excluidos de Windows: los rangos reservados de Hyper-V (`netsh interface ipv4 show
   excludedportrange protocol=tcp`) hacen fallar binds con EACCES. Si un server o la suite no
-  arranca con EACCES, mover el puerto fuera de los rangos reportados (la suite usa 4531 y 4533,
+  arranca con EACCES, mover el puerto fuera de los rangos reportados (la suite usa 4631 y 4633, y ojo: Astro 7 permite UN dev daemon por proyecto - si el
+  usuario tiene su `pnpm run dev` abierto (4321), la suite no arranca; cerrarlo antes con
+  `pnpm exec astro dev stop` (con su OK),
   ver `playwright.config.ts`; el dev y preview manuales quedan en 4321 y 4322).

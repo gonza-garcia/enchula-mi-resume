@@ -40,7 +40,7 @@ test.describe('Fuentes (Fase G)', () => {
     await page.goto('/fuentes/');
     const board = page.locator('.fuente-card', { hasText: 'Demo Job Board' });
     const link = board.locator('.fuente-historial a', { hasText: 'Aurora Labs' });
-    await expect(link).toHaveAttribute('href', `/?tab=adaptados&oferta=${AURORA}`);
+    await expect(link).toHaveAttribute('href', `/ofertas/?oferta=${AURORA}`);
 
     const sheet = page.locator('.fuente-card', { hasText: 'Demo Curated Spreadsheet' });
     await expect(sheet.locator('.fuente-historial')).toContainText('Nimbus Software');

@@ -1,7 +1,7 @@
 # Enchula mi Resume
 
-Producto de CV e interview prep: un sitio Astro estático, bilingüe, ATS friendly, con gestor
-de ofertas, banco de preguntas y plan de estudios navegable. Cualquier usuario clona el repo,
+Producto de CV e interview prep: un sitio Astro estático, bilingüe, ATS friendly, con
+pipeline de ofertas, banco de preguntas y plan de estudios navegable. Cualquier usuario clona el repo,
 un agente lo entrevista para armar su perfil y el build cae en una demo ficticia si todavía no
 cargó datos.
 
@@ -16,13 +16,13 @@ forma parte del producto.
   (ADR-0026). El perfil es la fuente única de datos, en capas: identidad, hechos, skills como
   entidad y posicionamientos.
 - El contenido base tiene dos locales: `es` y `en`. La UI de las islas queda en español.
-- El sitio es Astro 7 (upgrade documentado en ADR-0020). "Mis perfiles" (`/`) fusiona el
-  CV base canónico imprimible (estático vanilla) con los CVs adaptados en dos tabs, y
-  aloja la isla React del gestor de ofertas en su tab "CVs adaptados"; `/ofertas` es la
-  vista de resultados del pipeline y `/interview` y `/learning` son islas React
-  (ADR-0021, ADR-0024, ADR-0029, ADR-0040 y ADR-0042). La navbar de 4 destinos
-  ("Mis perfiles", "Ofertas", "Prep entrevistas" y "Plan de estudios") es la misma en
-  todas las páginas y se estila como links con subrayado (ADR-0040 y ADR-0042).
+- El sitio es Astro 7 (upgrade documentado en ADR-0020). "Mis perfiles" (`/`) muestra el
+  CV base canónico imprimible (estático vanilla) con su sidebar de perfil, idioma y tema;
+  `/ofertas` es la vista de resultados del pipeline con el visor de documentos (Oferta
+  original · Match report · CV adaptado · Cover letter · Postulación) y `/interview` y
+  `/learning` son islas React (ADR-0024, ADR-0029 y ADR-0042). La navbar de 5 destinos
+  ("Mis perfiles", "Ofertas", "Fuentes", "Prep entrevistas" y "Plan de estudios") es la
+  misma en todas las páginas y se estila como links con subrayado (ADR-0040 y ADR-0042).
 - `/interview` publica el banco de prep de entrevistas en inglés, con filtros por área, nivel,
   rol y frecuencia, un "Filtro" de texto sobre las tarjetas y una búsqueda global con ranking
   (área > título > respuesta), preguntas trampa, quizzes y escenarios de código. El contenido
@@ -38,9 +38,9 @@ forma parte del producto.
   deriva del disco: Agregada, Analizada, Adaptada y Postulada (ADR-0022 y ADR-0042). El
   repo lleva dos ofertas demo ficticias (Aurora Labs y Nimbus Software) como fixtures del
   producto; en una instancia propia, las ofertas reales del usuario quedan fuera de git.
-- El gestor de ofertas, en la tab "CVs adaptados" de "Mis perfiles", lista exactamente lo
-  que hay en disco y sus flujos de creación usan el puente de prompts con las skills del
-  repo (ADR-0023).
+- La app no tiene flujos de creación: el pipeline se opera con un agente de IA corriendo
+  las skills del repo, que escriben los archivos y validan en build; la app lista y revisa
+  exactamente lo que hay en disco (ADR-0045, que retiró el puente de prompts del ADR-0023).
 - Las skills del flujo viven en `skills/job-seeking/`: `build-profile`, `capture-job-offer`,
   `adapt-resume-to-offer`, `research-content`, `content-designer`, `capture-learning-plan`,
   `build-interview-review-plan` y `register-sweep`.
@@ -53,7 +53,7 @@ forma parte del producto.
   viajan al repo público.
 - Cada oferta puede llevar un plan de repaso (`interview-review-plan.json`, ADR-0035) que
   `build-interview-review-plan` genera cruzando los "Temas a repasar" del match-report
-  contra el banco. La tab "CVs adaptados" ofrece "Cargar repaso" por oferta (navega a
+  contra el banco. El visor de `/ofertas` ofrece "Cargar repaso" por oferta (navega a
   `/interview`) y `/interview` lo carga con confirmación (AlertDialog) y toast, con marcas
   por tema y filtro opcional al repaso, sin tocar `interview-progress`.
 
@@ -65,10 +65,9 @@ El perfil (`src/content/profile.json`, schema Zod en `src/schemas/profile.ts`) e
 con datos mal formados (ids de skill o de bullet huérfanos, campos sin los dos locales, ids
 duplicados).
 
-La página `/` y el export JSON renderizan y descargan la proyección activa del perfil
-(posicionamiento más locale), calculada en `src/lib/profile-projection.ts`. El brand y el
-título PDF salen del perfil. `/learning` consume el read model del perfil
-(`src/lib/profile-read-model.ts`).
+La página `/` renderiza la proyección activa del perfil (posicionamiento más locale),
+calculada en `src/lib/profile-projection.ts`. El brand sale del perfil. `/learning` consume
+el read model del perfil (`src/lib/profile-read-model.ts`).
 
 `src/content/resume.json` dejó de ser fuente: es contenido heredado que puede usarse como
 material de la entrevista de `build-profile`, y la salida al repo público lo retira
@@ -86,8 +85,8 @@ decisión vigente de este README tienen prioridad sobre el texto histórico de u
 
 1. Clonar el repo, `pnpm install` y `pnpm run dev`: se ve el CV demo ficticio funcionando sin
    datos personales.
-2. Ejecutar la skill `build-profile` (`skills/job-seeking/build-profile/SKILL.md`) en modo
-   directo. La entrevista cubre identidad, hechos (experiencia, educación, certificaciones,
+2. Ejecutar la skill `build-profile` (`skills/job-seeking/build-profile/SKILL.md`). La
+   entrevista cubre identidad, hechos (experiencia, educación, certificaciones,
    idiomas y proyectos), skills como entidad y los posicionamientos, con cada campo de texto
    en es y en. El perfil se guarda en `src/content/profile.json` (dato del usuario: nunca
    viaja al repo público) y se valida con
@@ -96,25 +95,27 @@ decisión vigente de este README tienen prioridad sobre el texto histórico de u
    estudios propio.
 4. Verificar con `pnpm run check && pnpm run build && pnpm run test`.
 
-En modo app (prompt de la app o de un agente externo), las skills devuelven el JSON para
-pegar y guardar después, con el mismo destino.
-
 ## Decisiones vigentes
 
 ### Formato y arquitectura
 
 - Astro 7 genera HTML, CSS y JavaScript estáticos.
-- El CV principal mantiene interactividad vanilla. La isla del gestor de ofertas vive en
-  la tab "CVs adaptados" de "Mis CVs" y las páginas `/interview` y `/learning` usan islas
-  React porque administran estados y flujos de interacción más complejos (ADR-0040).
+- El CV principal mantiene interactividad vanilla. Las páginas `/ofertas`, `/interview` y
+  `/learning` usan islas React porque administran estados y flujos de interacción más
+  complejos.
 - El layout principal es single column para mantener la lectura ATS.
 - La experiencia laboral se renderiza en formato ATS-safe, revisión v4 (ADR-0039): una
   entrada por empleo en tres líneas (rol, empresa, fechas del empleo); las asignaciones por
   cliente se renderizan como bloques `Client: <cliente> (<años>) | descriptor` dentro de la
   descripción, con bullets de carácter literal (`•`, `-`) y nombres en la convención
   `Marca cliente - descriptor`; y la línea de contacto va en texto plano sin links.
-- El toggle de idioma, los exports y el panel de tema funcionan del lado cliente.
-- El PDF se genera con `window.print()` y CSS de impresión, sin una librería de PDF.
+- El toggle de idioma y el panel de tema funcionan del lado cliente y viven en el sidebar
+  de "Mis perfiles" (Fase H).
+- El CV se imprime desde el navegador con `window.print()` y CSS de impresión, sin una
+  librería de PDF. El export de la app (PDF/DOCX/JSON) está retirado hasta el diálogo
+  reutilizable "Descargar" de la H3: entre la H1 y la H3 la app no exporta nada (hueco
+  confirmado por la persona usuaria); el contrato ATS v4 del DOCX se protege con unit test
+  contra el Packer (`buildResumeDocx`, ADR-0039).
 - La impresión conserva el accent elegido para headings y URLs, con texto y fondo claros para
   mantener legibilidad y parsing.
 - `/interview` mantiene UI en español y contenido del banco en inglés. El progreso de estudio
@@ -130,7 +131,7 @@ pegar y guardar después, con el mismo destino.
 
 - El perfil del usuario es la fuente única de datos, en capas: identidad, hechos, skills como
   entidad y posicionamientos. `/` renderiza la proyección del perfil (posicionamiento más
-  locale) y el export JSON descarga esa proyección (ADR-0026).
+  locale) (ADR-0026).
 - El perfil lleva además un `backlog` de experiencias en reserva: fragmentos listos para CV con
   su prueba y su techo (`proof` y `limits`), que no se renderizan mientras están en `reserve`.
   Se promueven a un CV adaptado por decisión de la persona usuaria, o al CV base
@@ -139,8 +140,9 @@ pegar y guardar después, con el mismo destino.
   demo es siempre ficticio (persona y empresas inventadas).
 - El plan de estudios es un contrato JSON propio con la demanda colgada de la skill y no del
   curso (ADR-0028).
-- El onboarding de un usuario nuevo es la skill de agente `build-profile`, con modo app y modo
-  directo. El camino de clonar a CV maestro está documentado arriba.
+- El onboarding de un usuario nuevo es la skill de agente `build-profile`, que escribe el
+  perfil directo y valida en build (ADR-0045). El camino de clonar a CV maestro está
+  documentado arriba.
 - La salida al repo público sigue el protocolo del ADR-0027.
 
 ### Página `/learning` (ADR-0029, ADR-0030 y ADR-0041)
@@ -164,42 +166,35 @@ pegar y guardar después, con el mismo destino.
   por fase, sobre el banco reorganizado en áreas 1:1 con las fases (los id de pregunta se
   conservan para no perder el progreso guardado).
 
-### Página "Mis perfiles" (ADR-0040 y ADR-0042)
+### Página "Mis perfiles" (Fase H; antes ADR-0040)
 
-- "Mis perfiles" (antes "Mis CVs") vive en `/` con tabs "CVs base" (default) y "CVs
-  adaptados". El CV base canónico imprimible sigue en `/`: sin JavaScript se renderiza el
-  CV base y el print emite solo el documento activo (el chrome de tabs y cards no se
-  imprime). Los posicionamientos del perfil son los perfiles (Frontend, Frontend AI, y
-  los que se agreguen).
-- La tab "CVs base" tiene cards por posicionamiento como selector (título, resumen y
-  acciones "Imprimir PDF" / "Exportar") con el CV activo debajo; reemplazan al toggle
-  del toolbar, que queda con idioma / export / tema.
-- La tab "CVs adaptados" aloja el gestor de ofertas con sus cards por oferta y el estado
-  derivado del disco (ADR-0022 sin cambios). Las cards con `application.md` llevan el
-  chip de estado de la postulación y el panel muestra la sección "Postulación" (estado,
-  motivo, confirmación del ATS, outcome y documentos; mensaje neutro sin acciones cuando
-  no hay registro).
-- La ruta `/adapted` ya no existe: el deep link canónico es `/?tab=adaptados` (se acepta
-  también `?tab=adapted`) y con `&oferta=<slug>` selecciona la oferta pedida. El
-  back-link del gestor es "← CVs base" y activa la tab.
-- Navbar consistente de 4 destinos ("Mis perfiles" · "Ofertas" · "Prep entrevistas" ·
-  "Plan de estudios") en todas las páginas, desde el componente compartido `SiteNav`,
-  como links con subrayado. El Toolbar completo (idioma / export / tema) vive solo en
-  "Mis perfiles"; `/ofertas`, `/interview` y `/learning` conservan la barra slim.
-- El diálogo de PDF sugiere el nombre neutro del ADR-0036 en ambas tabs, y los exports
-  actúan sobre el documento activo resuelto por tab.
+- "Mis perfiles" (antes "Mis CVs") vive en `/` con el CV base canónico imprimible y su
+  sidebar (Fase H1): selector de perfil en lista (los posicionamientos del perfil son los
+  perfiles: Frontend, Frontend AI, y los que se agreguen), idioma y tema. Sin JavaScript
+  se renderiza el CV base y el print emite solo el documento activo (el sidebar no se
+  imprime). El "Descargar" del sidebar llega con el diálogo reutilizable de la H3; entre
+  la H1 y la H3 la app no exporta nada (hueco confirmado por la persona usuaria).
+- Navbar consistente de 5 destinos ("Mis perfiles" · "Ofertas" · "Fuentes" · "Prep
+  entrevistas" · "Plan de estudios") en todas las páginas, desde el componente compartido
+  `SiteNav`, como links con subrayado. El Toolbar completo (brand + nav + aviso de build)
+  vive solo en "Mis perfiles"; el resto de las páginas conservan la barra slim.
+- El nombre neutro de los PDF exportados (ADR-0036) queda sin superficie hasta que el
+  export vuelva con la H3.
 
 ### Página "Ofertas" y contrato de postulación (ADR-0042 y ADR-0044)
 
 - `/ofertas` es la vista de resultados del pipeline (variante D): sidebar de filtros
   (Estado: **Todas / Capturadas / Borrador / Enviadas / Confirmadas / Descartadas**, con
   counts facetados — el número de cada filtro es exactamente lo que devuelve la lista al
-  activarlo; Perfil con toggle multi-perfil y "+ Agregar perfil" con puente de prompts a
-  `build-profile`; Top matches con score ≥ 80), cards compactas (score, `rol -
+  activarlo; Perfil con toggle multi-perfil; Top matches con score ≥ 80), cards compactas
+  (score, `rol -
   empresa`, estado/fecha/ATS, chips de metadata y 1 línea de motivo o confirmación) y
-  visor con segmented de 4 vistas (Oferta original / CV adaptado / Cover letter /
-  Postulación) y menú de tres puntos ("Cargar repaso", que navega a
-  `/interview/?repaso=<slug>`, y "Descargar", que baja el archivo de la vista activa).
+  visor con segmented de 5 vistas (Oferta original / Match report / CV adaptado / Cover
+  letter / Postulación) y menú de tres puntos ("Cargar repaso", que navega a
+  `/interview/?repaso=<slug>`, y "Descargar", que baja el archivo de la vista activa). El
+  CV adaptado se renderiza con el mismo markup ATS v4 que el CV base, con la tipografía
+  acotada al panel del visor (Fase H1), y el deep link canónico de una oferta es
+  `/ofertas/?oferta=<slug>` (selección con la URL al día).
 - `docs/job-offers/<slug>/application.md` es el contrato de resultado de una postulación
   (frontmatter validado con Zod): requeridos `empresa`, `rol`, `fecha` (alias legacy
   `fecha_envio`) y `estado` (`borrador | enviada | confirmada | descartada`, con
@@ -281,9 +276,9 @@ están en `docs/deploy.md`.
 | 0011 | Vigente | Migración a pnpm y convención de AGENTS.md |
 | 0016 | Vigente | Frontends estáticos en cualquier host; Cloudflare Pages probado |
 | 0020 | Vigente | Upgrade de Astro antes del gestor de ofertas (terminó en Astro 7) |
-| 0021 | Vigente | Isla React para el gestor de ofertas, excepción al stack sin framework |
+| 0021 | Retirado en la Fase H (ver ADR-0045) | Isla React para el gestor de ofertas, excepción al stack sin framework |
 | 0022 | Vigente | Carpeta por oferta con estados derivados del disco |
-| 0023 | Vigente | Puente de prompts para escribir archivos y verificación por endpoint |
+| 0023 | Obsoleto (ADR-0045) | Puente de prompts para escribir archivos y verificación por endpoint |
 | 0024 | Vigente | Banco de interview prep, validación Zod, Shiki e isla React |
 | 0025 | Vigente | Salario y recruiter en el contrato de captura de ofertas |
 | 0026 | Vigente | Modelo de perfil en capas con posicionamientos y fallback al ejemplo |
@@ -300,11 +295,12 @@ están en `docs/deploy.md`.
 | 0037 | Vigente | Contenido externo como dato no confiable |
 | 0038 | Vigente | Chequeo de duplicados y postulaciones previas antes de capturar |
 | 0039 | Vigente | Formato de experiencia ATS-safe |
-| 0040 | Vigente | "Mis CVs": fusión de `/` y `/adapted` con tabs y navbar consistente |
+| 0040 | Retirado en la Fase H (ver ADR-0045) | "Mis CVs": fusión de `/` y `/adapted` con tabs y navbar consistente |
 | 0041 | Vigente | Gates de `/learning` con evidencia citada, sin estado inventado |
 | 0042 | Vigente | Contrato de postulación (`application.md`) y UI de resultados |
 | 0043 | Vigente | Fuentes y barridos del pipeline de búsqueda |
 | 0044 | Vigente | Estados de la postulación a cuatro (`borrador · enviada · confirmada · descartada`) |
+| 0045 | Vigente | Retiro del puente de prompts: la app se opera con un agente corriendo las skills |
 
 Los ADRs personales (decisiones del CV y hosting de las apps personales) están en
 el repo privado de planning y son legado suyo. Los ADRs históricos se conservan como
@@ -556,7 +552,8 @@ contexto y no contradecir las decisiones vigentes de este README.
   tests) tras cada capa. 6 commits atómicos en la instancia, 1 en staging, 1 en legacy,
   1 en memento y 1 en ai-job-search.
 - 30 oct 2026 (sesión operativa): **rename de la raíz del workspace intentado y pospuesto**.
-  `J:\.webdev\.projects\enchulame-el-resume` → `enchula-mi-resume` no se puede hacer en
+  El rename de la carpeta del workspace (`enchulame-el-resume` → `enchula-mi-resume`) no se
+  puede hacer en
   caliente: los procesos del propio tooling de la sesión (`opencode.exe` y los MCP servers y
   wrappers hijos) nacieron con esa carpeta como directorio de trabajo y Windows rechaza el
   rename ("recurso ocupado"; verificado con Sysinternals Handle: 13 handles en 11 procesos).
@@ -564,13 +561,13 @@ contexto y no contradecir las decisiones vigentes de este README.
   renombrar la carpeta a mano antes de abrir T3 Code; la sesión que continúe cierra la capa
   (paths de `sync-staging.mjs`, `final-register.py` y `validate-adapted.ts`, `session_move` a
   la raíz nueva, suite en verde y cierre del pendiente — todo escrito en "Pendientes con
-  gatillo" del roadmap). Pendiente nuevo: actualizar `J:\.webdev\.hosting\INVENTARIO.md`
-  (nombres de repo, URLs `*.pages.dev` y paths locales viejos del rename del 29-oct). Sin
+  gatillo" del roadmap). Pendiente nuevo: actualizar el inventario de hosting (nombres de
+  repo, URLs `*.pages.dev` y paths locales viejos del rename del 29-oct). Sin
   cambios de producto: sin suite, sin re-sync al staging y sin resync con el agente de
   evidencias.
 - 30 oct 2026 (sesión de cierre del rename): **última capa del rename cerrada: la raíz del
   workspace**. La persona usuaria renombró la carpeta a mano tras el reinicio
-  (`J:\.webdev\.projects\enchulame-el-resume` → `enchula-mi-resume`); esta sesión corrió ya
+  (`enchulame-el-resume` → `enchula-mi-resume`); esta sesión corrió ya
   sobre la raíz nueva (sin `session_move`), actualizó los 3 paths hardcodeados restantes
   (`sync-staging.mjs` ROOT, `final-register.py` BASE + el path de la plantilla de
   `application.md`, `validate-adapted.ts` import; gate grep de `enchulame-el-resume` = 0 en
@@ -579,7 +576,7 @@ contexto y no contradecir las decisiones vigentes de este README.
   `*.pages.dev` (el diálogo de CF decía lo contrario): las URLs viejas
   `enchulame-el-resume*.pages.dev` dejan de resolver y las nuevas
   `enchula-mi-resume*.pages.dev` responden 200 (verificado 30 oct) — la entrada del 29-oct
-  queda como registro de lo anotado entonces. `J:\.webdev\.hosting\INVENTARIO.md` actualizado
+  queda como registro de lo anotado entonces. El inventario de hosting quedó actualizado
   (nombres de repo, URLs verificadas y paths locales). Pendientes del rename de la raíz y de
   actualización del INVENTARIO cerrados en el roadmap. Sin cambios de producto: sin re-sync al
   staging y sin resync con el agente de evidencias.
@@ -678,3 +675,20 @@ contexto y no contradecir las decisiones vigentes de este README.
   tal cual por la captura (un archivo, 80 secuencias), no el renderizador ni las
   reglas de limpieza; ahora hay test que falla nombrando el archivo y una regla
   de codificación en `capture-job-offer`. Verificación en verde: 353 tests.
+- 6-8 nov 2026 (Fase H, H1): **"Mis Perfiles" con sidebar, visor de `/ofertas` con match
+  report y retiro total del puente de prompts**. El match report pasa a ser la quinta
+  vista del visor de `/ofertas` (Oferta original · Match report · CV adaptado · Cover
+  letter · Postulación), con deep link propio `/ofertas/?oferta=<slug>` (H1a-H1b), y la
+  tab "CVs adaptados" se elimina con todo su código: el gestor de ofertas entero
+  (~1200 líneas), los puentes de prompts copiar/pegar y "+ Agregar perfil" (H1c-H1d).
+  Se van también "Export to" / "Imprimir PDF" y el diálogo de LinkedIn entero (sus tres
+  tabs): entre la H1 y la H3 la app no exporta nada (hueco de una tanda confirmado por
+  la persona usuaria) y el contrato ATS v4 del DOCX se protege con unit test contra el
+  Packer (H1e). "Mis perfiles" queda con sidebar de selector de perfil en lista, idioma y
+  tema (H1f), y el CV adaptado de `/ofertas` se renderiza con el mismo markup ATS v4 que
+  el CV base —tipografía acotada al panel, sin perder atributos ATS—, decisión elegida
+  visualmente que recupera los specs de formato del adaptado (H1g). Cierre de
+  documentación: las skills quedan solo en modo directo (fuera el "modo app"), el
+  ADR-0023 queda obsoleto (ADR-0045), y el export JSON y el nombre neutro del PDF
+  (ADR-0036) quedan sin superficie hasta el diálogo "Descargar" de la H3. Verificación
+  en verde: 292 tests.

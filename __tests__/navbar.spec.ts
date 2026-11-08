@@ -8,7 +8,7 @@ const DESTINATIONS = [
   { label: 'Plan de estudios', href: '/learning/' }
 ];
 
-const PAGES = ['/', '/?tab=adaptados', '/ofertas/', '/fuentes/', '/interview/', '/learning/'];
+const PAGES = ['/', '/ofertas/', '/fuentes/', '/interview/', '/learning/'];
 
 test.describe('Navbar consistente (5 destinos)', () => {
   for (const path of PAGES) {
@@ -28,7 +28,6 @@ test.describe('Navbar consistente (5 destinos)', () => {
   test('cada pagina marca su destino como activo', async ({ page }) => {
     const cases: Array<[string, string]> = [
       ['/', 'Mis perfiles'],
-      ['/?tab=adaptados', 'Mis perfiles'],
       ['/ofertas/', 'Ofertas'],
       ['/fuentes/', 'Fuentes'],
       ['/interview/', 'Prep entrevistas'],
@@ -64,16 +63,18 @@ test.describe('Navbar consistente (5 destinos)', () => {
     expect(parseFloat(style.weight)).toBeGreaterThanOrEqual(600);
   });
 
-  test('los controles del toolbar (idioma, export, tema) solo viven en Mis perfiles', async ({
+  test('el sidebar de controles (perfiles, idioma, tema) solo vive en Mis perfiles', async ({
     page
   }) => {
     await page.goto('/');
-    await expect(page.locator('#btn-export')).toHaveCount(1);
-    await expect(page.locator('.theme-panel')).toHaveCount(1);
+    await expect(page.locator('.mp-side')).toHaveCount(1);
+    await expect(page.locator('.mp-profile-item')).toHaveCount(2);
+    await expect(page.locator('.mp-side .toggle button#btn-en')).toHaveCount(1);
+    await expect(page.locator('.mp-side .theme-panel')).toHaveCount(1);
 
     for (const path of ['/ofertas/', '/interview/', '/learning/']) {
       await page.goto(path);
-      await expect(page.locator('#btn-export')).toHaveCount(0);
+      await expect(page.locator('.mp-side')).toHaveCount(0);
       await expect(page.locator('.theme-panel')).toHaveCount(0);
     }
   });

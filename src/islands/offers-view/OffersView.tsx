@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 import type { EstadoFilter, OfferRow, OffersViewProps, ViewerView } from './contract';
 import { ESTADO_FILTERS, VIEWER_VIEWS } from './contract';
 import AdaptedCvView from './AdaptedCvView';
-import ProfilePromptModal from './ProfilePromptModal';
 
 const BADGE_CLASS: Record<string, string> = {
   borrador: 'of-badge-borrador',
@@ -114,7 +113,6 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [view, setView] = useState<ViewerView>('oferta');
   const [menuOpen, setMenuOpen] = useState(false);
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -216,6 +214,23 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
 
   const selected = visible.find((row) => row.slug === selectedSlug) ?? visible[0] ?? null;
 
+  /**
+   * Deep link `?oferta=<slug>` (H1b): reemplaza el `?tab=adaptados&oferta=` del
+   * gestor de ofertas, que se retira. Es lo que `/fuentes` usa para enlazar a la
+   * oferta concreta que salio de cada fuente.
+   */
+  useEffect(() => {
+    const slug = new URLSearchParams(window.location.search).get('oferta');
+    if (slug) setSelectedSlug(slug);
+  }, []);
+
+  const selectOffer = (slug: string) => {
+    setSelectedSlug(slug);
+    const url = new URL(window.location.href);
+    url.searchParams.set('oferta', slug);
+    window.history.replaceState({}, '', url);
+  };
+
   const countForEstado = (filter: EstadoFilter): number => {
     if (filter === 'todas') return counts.todas;
     if (filter === 'capturadas') return counts.capturadas;
@@ -228,6 +243,11 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
   const activeFile = (): { name: string; content: string; mime: string } | null => {
     if (!selected) return null;
     if (view === 'oferta') return { name: 'offer.md', content: selected.offerRaw, mime: 'text/markdown' };
+    if (view === 'report') {
+      return selected.reportRaw
+        ? { name: 'match-report.md', content: selected.reportRaw, mime: 'text/markdown' }
+        : null;
+    }
     if (view === 'cv') {
       if (!selected.adaptedResume && !selected.adaptedRaw) return null;
       return {
@@ -306,9 +326,6 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
               </button>
             );
           })}
-          <button type="button" className="of-item muted" onClick={() => setProfileModalOpen(true)}>
-            <span>+ Agregar perfil</span>
-          </button>
         </FilterGroup>
 
         <FilterGroup
@@ -390,7 +407,7 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
                 type="button"
                 className={`of-card${active ? ' sel' : ''}`}
                 aria-pressed={active}
-                onClick={() => setSelectedSlug(row.slug)}
+                onClick={() => selectOffer(row.slug)}
               >
                 <span
                   className={`of-score${(row.matchScore ?? 0) < TOP_MATCH ? ' mid' : ''}`}
@@ -507,6 +524,14 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
               {view === 'oferta' && (
                 <div className="of-prose" dangerouslySetInnerHTML={{ __html: selected.offerHtml }} />
               )}
+              {view === 'report' &&
+                (selected.reportHtml ? (
+                  <div className="of-prose" dangerouslySetInnerHTML={{ __html: selected.reportHtml }} />
+                ) : (
+                  <p className="of-empty-line muted tiny">
+                    Sin match-report.md en la carpeta de la oferta.
+                  </p>
+                ))}
               {view === 'cv' &&
                 (selected.adaptedResume ? (
                   <AdaptedCvView data={selected.adaptedResume} />
@@ -648,8 +673,6 @@ export default function OffersView({ rows, positionings, sources }: OffersViewPr
           </div>
         )}
       </div>
-
-      <ProfilePromptModal open={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
     </div>
   );
 }

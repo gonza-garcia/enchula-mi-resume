@@ -1,6 +1,7 @@
 # ADR-0023: Puente de prompts para escribir archivos y verificación por endpoint
 
-Estado: Vigente.
+Estado: Obsoleto (8 nov 2026). Reemplazado por el ADR-0045: la app se opera con un
+agente de IA corriendo las skills del repo y no queda ningún puente de prompts.
 
 ## Contexto
 

@@ -1,13 +1,20 @@
 import { test, expect, type Page } from '@playwright/test';
+import path from 'node:path';
+import { Packer } from 'docx';
 import { clientBlock, projectYears } from '../src/lib/resume-sections';
+import { buildResumeDocx } from '../src/scripts/docx-export';
+import { loadProfile } from '../src/lib/profile';
+import { projectAllPositionings } from '../src/lib/profile-projection';
 import { docxText, docxDocumentXml } from './helpers/docx-text';
 
 /**
  * Formato ATS-safe, revision v4 (ADR-0039): estas specs afirman el contrato de
- * render en las tres superficies (CV base, CV adaptado y DOCX):
- * linea de cliente `Client:`/`Cliente:` con anos compactos entre parentesis,
- * bullets de texto literal (`•`, `-`), sin rangos de fecha sueltos por proyecto
- * y contacto en texto plano, sin links.
+ * render del CV base y del DOCX.
+ *
+ * Entre la H1 y la H3 la app no exporta nada (Fase H, sin "Descargar"
+ * provisorio), asi que el contrato ATS v4 del DOCX se afirma sin UI: se arma el
+ * documento con buildResumeDocx (funcion pura) y se empaca con el Packer sobre el
+ * perfil demo, y lo que se mira es la capa de texto igual que antes.
  */
 
 const EN = 'article.lang[data-lang="en"][data-positioning="frontend"]';
@@ -18,14 +25,12 @@ const CLIENT_LINE_ES = '\u2022 Cliente: Freightline Control (2023-2026) | consol
 
 const LONG_DATE_RANGE = /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}\s+-\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}/;
 
-async function downloadDocx(page: Page, lang: 'en' | 'es') {
-  await page.goto('/');
-  if (lang === 'es') await page.click('#btn-es');
-  const downloadPromise = page.waitForEvent('download');
-  await page.click('#btn-export');
-  await page.click('[data-export="docx"]');
-  const download = await downloadPromise;
-  return (await download.path())!;
+// Mismo perfil demo que usa el build de las specs (PROFILE_SOURCE=example).
+const { profile } = loadProfile(path.resolve('src', 'content'), { forceExample: true });
+const projections = projectAllPositionings(profile);
+
+function docxOf(locale: 'en' | 'es'): Promise<Buffer> {
+  return Packer.toBuffer(buildResumeDocx(projections.frontend[locale], locale));
 }
 
 test.describe('Formato ATS v4 — linea de cliente (clientBlock)', () => {
@@ -115,57 +120,63 @@ test.describe('Formato ATS v4 — CV base', () => {
   });
 });
 
-test.describe('Formato ATS v4 — CV adaptado (oferta demo Aurora Labs)', () => {
-  test('muestra el mismo formato de linea de cliente y bullets literales', async ({ page }) => {
-    await page.goto('/?tab=adaptados');
-    await page.locator('.offer-card').filter({ hasText: 'Aurora Labs' }).click();
-    const en = page.locator('.split-right article.lang[data-lang="en"]');
-    await expect(en.locator('.proj-line').first()).toHaveText(CLIENT_LINE_EN);
-    await expect(en.locator('.bullets li').first()).toHaveText(CLIENT_LINE_EN);
-    await expect(en.locator('.bullet-item').first()).toContainText('- ');
+test.describe('Formato ATS v4 — CV adaptado (oferta demo Aurora Labs, /ofertas)', () => {
+  // Decision 8-nov (H1g): el CV adaptado se renderiza en /ofertas con el mismo
+  // markup ATS v4 que el CV base. El visor muestra el locale del documento (en
+  // para el demo); el contrato de "Cliente:" en es lo siguen cubriendo los unit
+  // tests de clientBlock y los del DOCX.
+  const AURORA = '2026-10-05-aurora-labs-reactjs-frontend-developer';
 
-    const es = page.locator('.split-right article.lang[data-lang="es"]');
-    await expect(es.locator('.proj-line').first()).toHaveText(CLIENT_LINE_ES);
+  async function openAdaptedCv(page: Page) {
+    await page.goto(`/ofertas/?oferta=${AURORA}`);
+    await page.click('#of-view-tab-cv');
+    await expect(page.locator('.of-cv')).toBeVisible();
+    return page.locator('.of-cv');
+  }
+
+  test('muestra el mismo formato de linea de cliente y bullets literales', async ({ page }) => {
+    const cv = await openAdaptedCv(page);
+    await expect(cv.locator('.proj-line').first()).toHaveText(CLIENT_LINE_EN);
+    await expect(cv.locator('.bullets li').first()).toHaveText(CLIENT_LINE_EN);
+    await expect(cv.locator('.bullet-item').first()).toContainText('- ');
   });
 
   test('el empleo va en tres lineas y el proyecto sin fechas sueltas', async ({ page }) => {
-    await page.goto('/?tab=adaptados');
-    await page.locator('.offer-card').filter({ hasText: 'Aurora Labs' }).click();
-    const en = page.locator('.split-right article.lang[data-lang="en"]');
-    await expect(en.locator('.job-head').first().locator('.job-role')).toHaveText('Frontend Developer');
-    await expect(en.locator('.job-head').first().locator('.job-company')).toHaveText('Aeronix Logistics');
-    await expect(en.locator('.job-head').first().locator('.job-dates')).toHaveText('Apr 2021 - Aug 2026');
-    await expect(en.locator('.job-head').first().locator('*')).toHaveCount(3);
+    const cv = await openAdaptedCv(page);
+    const head = cv.locator('.job-head').first();
+    await expect(head.locator('.job-role')).toHaveText('Frontend Developer');
+    await expect(head.locator('.job-company')).toHaveText('Aeronix Logistics');
+    await expect(head.locator('.job-dates')).toHaveText('Apr 2021 - Aug 2026');
+    await expect(head.locator('*')).toHaveCount(3);
 
-    const subprojects = en.locator('.subproject');
+    const subprojects = cv.locator('.subproject');
     const count = await subprojects.count();
     for (let i = 0; i < count; i += 1) {
       expect((await subprojects.nth(i).textContent()) ?? '').not.toMatch(LONG_DATE_RANGE);
     }
+    await expect(subprojects.first()).toContainText('(2023-2026)');
   });
 
   test('el contacto va en texto plano, sin links', async ({ page }) => {
-    await page.goto('/?tab=adaptados');
-    await page.locator('.offer-card').filter({ hasText: 'Aurora Labs' }).click();
-    const contact = page.locator('.split-right article.lang[data-lang="en"] .contactline');
+    const cv = await openAdaptedCv(page);
+    const contact = cv.locator('.contactline');
     await expect(contact.locator('a')).toHaveCount(0);
+    await expect(contact).toContainText('ariana.montiel@example.com');
     await expect(contact).not.toContainText('mailto:');
     await expect(contact).not.toContainText('http');
   });
 });
 
-test.describe('Formato ATS v4 — DOCX', () => {
-  test('la capa de texto trae la linea de cliente y bullets literales', async ({ page }) => {
-    const file = await downloadDocx(page, 'en');
-    const lines = docxText(file).split('\n');
+test.describe('Formato ATS v4 — DOCX (buildResumeDocx + Packer, sin UI)', () => {
+  test('la capa de texto trae la linea de cliente y bullets literales', async () => {
+    const lines = docxText(await docxOf('en')).split('\n');
     expect(lines).toContain(CLIENT_LINE_EN);
     expect(lines).toContain('\u2022 Client: Customer portal (2021-2022) | self-service');
     expect(lines.some((line) => line.startsWith('- Modernized Aeronix'))).toBe(true);
   });
 
-  test('el empleo va en tres lineas y sin rangos de fecha por proyecto', async ({ page }) => {
-    const file = await downloadDocx(page, 'en');
-    const text = docxText(file);
+  test('el empleo va en tres lineas y sin rangos de fecha por proyecto', async () => {
+    const text = docxText(await docxOf('en'));
     const lines = text.split('\n');
     expect(lines).toContain('Frontend Developer');
     expect(lines).toContain('Aeronix Logistics');
@@ -178,16 +189,15 @@ test.describe('Formato ATS v4 — DOCX', () => {
     expect(text).not.toContain('Apr 2021 - Dec 2022');
   });
 
-  test('el contacto es texto plano, sin anotaciones de link', async ({ page }) => {
-    const file = await downloadDocx(page, 'en');
-    const xml = docxDocumentXml(file);
+  test('el contacto es texto plano, sin anotaciones de link', async () => {
+    const docx = await docxOf('en');
+    const xml = docxDocumentXml(docx);
     expect(xml).not.toContain('hyperlink');
     expect(xml).not.toContain('mailto:');
-    expect(docxText(file)).toContain('ariana.montiel@example.com');
+    expect(docxText(docx)).toContain('ariana.montiel@example.com');
   });
 
-  test('el export en es rotula la linea con "Cliente:"', async ({ page }) => {
-    const file = await downloadDocx(page, 'es');
-    expect(docxText(file).split('\n')).toContain(CLIENT_LINE_ES);
+  test('la version en es rotula la linea con "Cliente:"', async () => {
+    expect(docxText(await docxOf('es')).split('\n')).toContain(CLIENT_LINE_ES);
   });
 });

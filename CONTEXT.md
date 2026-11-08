@@ -1,6 +1,6 @@
 # Enchula mi Resume
 
-Contexto único del proyecto: el producto de CV, gestor de ofertas y preparación de
+Contexto único del proyecto: el producto de CV, pipeline de ofertas y preparación de
 entrevistas, y la instancia de uso personal que lo alimenta. Este archivo es glosario de
 lenguaje compartido, no spec ni historial.
 
@@ -37,12 +37,12 @@ _Avoid_: CV adaptado (como nombre de archivo), resume de oferta
 **cover-letter.md**:
 Carta de presentación aprobada por el usuario para una oferta, en la carpeta de
 la oferta. La escribe `adapt-resume-to-offer` al aprobarse la carta; la app solo
-la lee, la muestra y la exporta (PDF y DOCX). Archivo adicional: no cambia el
+la lee y la muestra. Archivo adicional: no cambia el
 estado de la oferta.
 _Avoid_: carta (suelta), presentación, motivation letter
 
 **Estado de oferta**:
-Etapa de la oferta en el gestor: Agregada, Analizada o Adaptada.
+Etapa de la oferta en disco: Agregada, Analizada o Adaptada.
 _Avoid_: status, fase, progreso
 
 **Agregada**:
@@ -57,45 +57,30 @@ _Avoid_: procesada, evaluada
 Estado en que además existe adapted-resume.json para esa oferta.
 _Avoid_: adaptada a la oferta (redundante), lista para aplicar
 
-### Flujo con agente externo
+### Operación del pipeline
 
-**Prompt compuesto**:
-Texto de instrucciones que la app genera para que un agente externo ejecute un
-paso, con output exigido en un único bloque JSON.
-_Avoid_: template de prompt, prompt de IA
-
-**Puente copiar y pegar**:
-Flujo en el que el usuario lleva el prompt compuesto a un agente externo y vuelve
-con su output JSON para pegarlo en la app.
-_Avoid_: integración de agente, bridge
-
-**Modal de IA**:
-Modal de dos columnas que muestra el prompt compuesto para copiar y recibe el
-output JSON del agente para pegar. Se reutiliza para capturar, analizar y adaptar.
-_Avoid_: modal de prompt, modal externo
-
-**Verificación**:
-Chequeo que la app hace contra el endpoint de ofertas para confirmar que los
-archivos de una acción existen en disco.
-_Avoid_: refresh, reload, sincronización
+**Operación por skills**:
+Flujo en el que la persona usuaria opera el pipeline con un agente de IA que
+corre las skills del repo: la skill escribe los archivos y valida en build, y la
+app solo lee, muestra y revisa lo que hay en disco (ADR-0045).
+_Avoid_: puente de prompts, copiar y pegar, modo app
 
 ### Componentes y skills
 
 **Isla de ofertas**:
-Componente React hidratado en la tab "CVs adaptados" de "Mis CVs" (`/`) que administra
-la lista de ofertas, sus estados, modales y verificaciones. No interviene en el CV base.
+Componente React hidratado en `/ofertas` que administra la lista de ofertas, sus
+estados, el sidebar de filtros y el visor de documentos. No interviene en el CV base.
 _Avoid_: gestor de ofertas, offers manager
 
 **Isla de interview prep**:
 Componente React hidratado en /interview que administra filtros, búsqueda, orden,
 detalle de pregunta, quizzes y escenarios del banco. No interviene en el CV
-principal ni en el gestor de ofertas.
+principal ni en `/ofertas`.
 _Avoid_: study app, app de preguntas
 
 **build-profile**:
 Skill que entrevista a la persona usuaria y escribe su perfil maestro validado
-(`src/content/profile.json`), con modo app (output JSON) y modo directo
-(guardado).
+(`src/content/profile.json`), con guardado y validación en build.
 _Avoid_: generador de CV, onboarding (para la skill), migrador de resume.json
 
 **capture-job-offer**:
@@ -164,7 +149,7 @@ _Avoid_: datos guardados, backup
 
 **Perfil**:
 Fuente única de datos de la persona usuaria: identidad, hechos, skills y
-posicionamientos. Lo consumen el CV, el export y `/learning`.
+posicionamientos. Lo consumen el CV y `/learning`.
 _Avoid_: CV maestro, resume.json, datos del CV
 
 **Hechos**:
@@ -178,7 +163,7 @@ bullets) orientada a un rol objetivo. v1 tiene dos: frontend y AI.
 _Avoid_: track, variante de CV, versión
 
 **Proyección**:
-Lo que `/` renderiza y el export JSON descarga: el perfil leído para un
+Lo que `/` renderiza: el perfil leído para un
 posicionamiento y un locale concretos.
 _Avoid_: CV base, resume.json, documento exportado
 

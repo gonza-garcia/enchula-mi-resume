@@ -1,6 +1,6 @@
 ---
 name: capture-learning-plan
-description: Capturar el plan de estudios del usuario y escribirlo como contrato JSON validado en src/content/learning-plan.json. Usar cuando el usuario quiera cargar o actualizar su plan de estudios, o cuando la app del CV genere un prompt que referencia esta skill. Sigue el patrón de capture-job-offer: modo app (output JSON) y modo directo (guardado y validación). NO investiga contenido del banco (eso es research-content) ni diseña quizzes (eso es content-designer).
+description: Capturar el plan de estudios del usuario y escribirlo como contrato JSON validado en src/content/learning-plan.json. Usar cuando el usuario quiera cargar o actualizar su plan de estudios. NO investiga contenido del banco (eso es research-content) ni diseña quizzes (eso es content-designer).
 ---
 
 # Capture Learning Plan
@@ -16,23 +16,16 @@ del usuario es gitignored; el ejemplo commiteado es
 
 - **Dueña de**: el contrato del plan de estudios (ADR-0028):
   `src/content/learning-plan.json`, schema `src/schemas/learning-plan.ts`.
-- **Escribe**: solo `src/content/learning-plan.json` (gitignored; modo directo o
-  verbatim vía prompt de guardado en modo app).
+- **Escribe**: solo `src/content/learning-plan.json` (gitignored).
 - **No toca**: el perfil, el banco de entrevistas ni las ofertas. El progreso
   del plan vive fuera del contrato (`learning-progress`, ADR-0029).
 
 ## Modo de operación
 
-La skill corre en dos modos, decididos por quien la invoca:
-
-- **Modo app**: el prompt pide devolver SOLO un bloque JSON del plan. El usuario
-  lo pega en la app o donde corresponda. No escribas archivos salvo que el
-  prompt lo pida explícitamente.
-- **Modo directo**: el usuario pide capturar y guardar. Aplicás todos los pasos,
-  incluido el guardado en disco y la validación en build.
-
-El output del modo app y el archivo del modo directo producen la misma
-información: mismos campos, mismos formatos, mismo destino.
+Un solo modo: el usuario pide capturar y guardar, aplicás todos los pasos y
+escribís el archivo en disco, con la validación en build. (El "modo app" —
+devolver un JSON para pegar en la app del CV — se retiró con el puente de
+prompts, ADR-0023 obsoleto desde el ADR-0045.)
 
 ## Contrato (resumen operativo)
 
@@ -96,7 +89,7 @@ idiomas en cada texto localizado.
 - Correr también contra el ejemplo si se tocó: `learning-plan.example.json`
   debe seguir validando.
 
-### 4. Guardar (solo modo directo)
+### 4. Guardar
 
 - Escribir `src/content/learning-plan.json` (gitignored, nunca commitear).
 - Confirmar al usuario que el build quedó verde y resumir fases, recursos y
