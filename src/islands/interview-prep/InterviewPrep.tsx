@@ -25,7 +25,9 @@ import {
   filterAndSortQuestions,
   FREQUENCY_LABELS,
   interviewProgressStore,
+  interviewUiStateStore,
   LEVEL_LABELS,
+  loadInterviewUiState,
   PROGRESS_STATUSES,
   PROGRESS_STATUS_LABELS,
   questionProgress,
@@ -37,6 +39,7 @@ import {
   type InterviewSearchGroups,
   type InterviewSearchLevel,
   type InterviewSort,
+  type InterviewUiState,
   type RenderedCodeBlock
 } from '../../lib/interview-prep';
 import {
@@ -205,7 +208,8 @@ function CodeBlock({ block }: { block: RenderedCodeBlock }) {
 }
 
 // Búsqueda global (cambio 6): Command con ranking área > título > respuesta y
-// acciones claras por resultado (ir / ver respuesta / practicar).
+// acciones claras por resultado (ir / practicar). Seleccionar un resultado
+// navega a la pregunta: la respuesta se muestra siempre en el detalle.
 const SEARCH_LEVEL_ORDER: InterviewSearchLevel[] = ['area', 'title', 'answer'];
 const SEARCH_LEVEL_HEADINGS: Record<InterviewSearchLevel, string> = {
   area: 'Coinciden en el área',
@@ -223,7 +227,6 @@ function GlobalSearch({
   onOpenChange,
   onQueryChange,
   onGoTo,
-  onShowAnswer,
   onPractice
 }: {
   open: boolean;
@@ -234,7 +237,6 @@ function GlobalSearch({
   onOpenChange: (open: boolean) => void;
   onQueryChange: (query: string) => void;
   onGoTo: (questionId: string) => void;
-  onShowAnswer: (questionId: string) => void;
   onPractice: (area: string) => void;
 }) {
   const total = SEARCH_LEVEL_ORDER.reduce((count, level) => count + groups[level].length, 0);
@@ -283,13 +285,6 @@ function GlobalSearch({
                         </span>
                       </span>
                     </CommandItem>
-                    <button
-                      type="button"
-                      className="search-result-action"
-                      onClick={() => onShowAnswer(question.id)}
-                    >
-                      Ver respuesta
-                    </button>
                     <button
                       type="button"
                       className="search-result-action"
@@ -643,17 +638,13 @@ function QuestionCard({
 function DetailPanel({
   question,
   areaLabel,
-  answerOpen,
   progress,
-  onToggleAnswer,
   onPractice,
   onProgressChange
 }: {
   question: InterviewQuestionView | null;
   areaLabel: string;
-  answerOpen: boolean;
   progress: InterviewProgressEntry;
-  onToggleAnswer: () => void;
   onPractice: () => void;
   onProgressChange: (patch: Partial<InterviewProgressEntry>) => void;
 }) {
@@ -682,18 +673,7 @@ function DetailPanel({
       <p className="detail-topic">{question.topic.replaceAll('-', ' ')}</p>
       <h2>{question.question.en}</h2>
 
-      <button
-        type="button"
-        className="answer-toggle"
-        aria-expanded={answerOpen}
-        aria-controls={`answer-${question.id}`}
-        onClick={onToggleAnswer}
-      >
-        <span>{answerOpen ? 'Ocultar respuesta' : 'Ver respuesta'}</span>
-        <span aria-hidden="true">{answerOpen ? '−' : '+'}</span>
-      </button>
-
-      <div id={`answer-${question.id}`} className="answer-panel" hidden={!answerOpen}>
+      <div className="answer-panel">
         <MarkdownText text={question.answer.en} />
         {question.codeBlocks.map((block) => <CodeBlock key={`${question.id}-${block.caption}`} block={block} />)}
       </div>
@@ -945,11 +925,18 @@ export default function InterviewPrep({
   reviewPlans = []
 }: InterviewPrepProps) {
   const areas = areaGroups.flatMap((group) => group.areas);
-  const [filters, setFilters] = useState<InterviewFilters>(() => initialFilters(areas));
-  const [sort, setSort] = useState<InterviewSort>('level-asc');
-  const [randomSeed, setRandomSeed] = useState(1);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [answerOpen, setAnswerOpen] = useState(false);
+  // Estado de la vista persistido en localStorage: filtros, orden y selección se
+  // restauran al montar la isla (Astro es MPA y al volver a la ruta todo se
+  // remonta). `null` = sin estado utilizable guardado: arranca por defecto.
+  const [restoredUi] = useState<InterviewUiState | null>(() =>
+    loadInterviewUiState(areas, questions.map((question) => question.id))
+  );
+  const [filters, setFilters] = useState<InterviewFilters>(
+    () => restoredUi?.filters ?? initialFilters(areas)
+  );
+  const [sort, setSort] = useState<InterviewSort>(() => restoredUi?.sort ?? 'level-asc');
+  const [randomSeed, setRandomSeed] = useState(() => restoredUi?.randomSeed ?? 1);
+  const [selectedId, setSelectedId] = useState<string | null>(() => restoredUi?.selectedId ?? null);
   const [levelStyle, setLevelStyle] = useState<LevelStyle>('traffic');
   const [practiceArea, setPracticeArea] = useState<string | null>(null);
   const [progress, setProgress] = useState<InterviewProgress>(() =>
@@ -962,7 +949,7 @@ export default function InterviewPrep({
     loadProgress(interviewReviewStateStore)
   );
   const [reviewDialogSlug, setReviewDialogSlug] = useState<string | null>(null);
-  const [onlyReview, setOnlyReview] = useState(false);
+  const [onlyReview, setOnlyReview] = useState(() => restoredUi?.onlyReview ?? false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const deferredSearch = useDeferredValue(filters.search);
   const effectiveFilters = { ...filters, search: deferredSearch };
@@ -1046,6 +1033,30 @@ export default function InterviewPrep({
     saveProgress(interviewProgressStore, progress);
   }, [progress]);
 
+  // Mismo patrón que `progress`: el initializer de useState corre también en el
+  // SSR del build (sin localStorage) y este effect re-aplica lo guardado tras la
+  // hidratación. Si no hay nada utilizable guardado no se pisa el estado.
+  useEffect(() => {
+    const restored = loadInterviewUiState(areas, questions.map((question) => question.id));
+    if (!restored) return;
+    setFilters(restored.filters);
+    setSort(restored.sort);
+    setRandomSeed(restored.randomSeed);
+    setSelectedId(restored.selectedId);
+    setOnlyReview(restored.onlyReview);
+  }, []);
+
+  useEffect(() => {
+    saveProgress(interviewUiStateStore, {
+      version: 1,
+      filters,
+      sort,
+      randomSeed,
+      selectedId,
+      onlyReview
+    });
+  }, [filters, sort, randomSeed, selectedId, onlyReview]);
+
   useEffect(() => {
     if (selected?.id !== selectedId) setSelectedId(selected?.id ?? null);
   }, [selected?.id, selectedId]);
@@ -1060,10 +1071,6 @@ export default function InterviewPrep({
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
-
-  useEffect(() => {
-    setAnswerOpen(false);
-  }, [selected?.id]);
 
   const resetFilters = () => {
     startTransition(() => setFilters(initialFilters(areas)));
@@ -1093,14 +1100,6 @@ export default function InterviewPrep({
 
   const goToQuestion = (questionId: string) => {
     setSelectedId(questionId);
-    setAnswerOpen(false);
-    setSearchOpen(false);
-    scrollToDetail();
-  };
-
-  const openQuestionAnswer = (questionId: string) => {
-    setSelectedId(questionId);
-    setAnswerOpen(true);
     setSearchOpen(false);
     scrollToDetail();
   };
@@ -1262,9 +1261,7 @@ export default function InterviewPrep({
           <DetailPanel
             question={selected}
             areaLabel={selectedAreaLabel}
-            answerOpen={answerOpen}
             progress={selected ? questionProgress(progress, selected.id) : { status: 'sin-marcar', note: '' }}
-            onToggleAnswer={() => setAnswerOpen((open) => !open)}
             onPractice={() => selected && showPractice(selected.area)}
             onProgressChange={updateQuestionProgress}
           />
@@ -1285,10 +1282,7 @@ export default function InterviewPrep({
                     question={question}
                     areaLabel={areaLabel(question.area, areaLabels)}
                     active={question.id === selected?.id}
-                    onSelect={() => {
-                      setSelectedId(question.id);
-                      setAnswerOpen(false);
-                    }}
+                    onSelect={() => setSelectedId(question.id)}
                   />
                 ))}
               </div>
@@ -1376,7 +1370,6 @@ export default function InterviewPrep({
         onOpenChange={setSearchOpen}
         onQueryChange={setSearchQuery}
         onGoTo={goToQuestion}
-        onShowAnswer={openQuestionAnswer}
         onPractice={practiceFromSearch}
       />
 

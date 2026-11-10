@@ -79,32 +79,40 @@ test.describe('Navbar consistente (5 destinos)', () => {
     }
   });
 
-  test('H3d: en pantallas anchas la barra se alinea a la columna de contenido de cada pagina', async ({
+  test('el toolbar usa un ritmo horizontal propio del chrome, igual en todas las rutas', async ({
     page
   }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
-    const cases: Array<[string, string]> = [
-      ['/', '.mp-shell'],
-      ['/ofertas/', '.of-shell'],
-      ['/fuentes/', '.fuentes'],
-      ['/interview/', '.interview-layout'],
-      ['/learning/', '.learning-app']
-    ];
-    for (const [path, selector] of cases) {
+    const brandXs: Array<[string, number]> = [];
+    for (const path of PAGES) {
       await page.goto(path);
       const brand = await page.locator('a.brand').boundingBox();
-      const contentLeft = await page.evaluate((sel) => {
-        const el = document.querySelector(sel);
-        if (!el) return null;
-        const rect = el.getBoundingClientRect();
-        return rect.left + parseFloat(getComputedStyle(el).paddingLeft);
-      }, selector);
       expect(brand, `brand en ${path}`).not.toBeNull();
-      expect(contentLeft, `contenido en ${path}`).not.toBeNull();
+      brandXs.push([path, brand!.x]);
+    }
+    // El chrome se desacopla del ancho de contenido de cada pagina: el brand
+    // arranca a la misma altura en las 5 rutas.
+    const [firstPath, firstX] = brandXs[0];
+    for (const [path, x] of brandXs) {
       expect(
-        Math.abs(brand!.x - contentLeft!),
-        `el brand y el contenido arrancan a la misma altura en ${path}`
+        Math.abs(x - firstX),
+        `brand en ${path} a la misma altura que en ${firstPath}`
       ).toBeLessThan(1);
     }
+
+    // En "Mis perfiles" el ritmo del chrome coincide con la columna del CV, asi
+    // que el brand sigue alineado con el contenido ahi (H3d).
+    await page.goto('/');
+    const brand = (await page.locator('a.brand').boundingBox())!;
+    const contentLeft = await page.evaluate(() => {
+      const el = document.querySelector('.mp-shell');
+      if (!el) return null;
+      return el.getBoundingClientRect().left + parseFloat(getComputedStyle(el).paddingLeft);
+    });
+    expect(contentLeft, 'contenido de Mis perfiles').not.toBeNull();
+    expect(
+      Math.abs(brand.x - contentLeft!),
+      'el brand y el CV de Mis perfiles arrancan a la misma altura'
+    ).toBeLessThan(1);
   });
 });

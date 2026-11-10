@@ -20,7 +20,10 @@ test.describe('Interview prep page /interview/', () => {
     await expect(page.getByRole('heading', { name: 'Prep entrevistas' })).toBeVisible();
     await expect(page.locator('.question-card')).toHaveCount(381);
     await expect(page.locator('.detail-panel')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Ver respuesta' })).toBeVisible();
+    // La respuesta se muestra siempre: no hay toggle que abra ni cierre nada.
+    await expect(page.locator('.answer-panel')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Ver respuesta' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Ocultar respuesta' })).toHaveCount(0);
   });
 
   test('empty facet selection shows no results until something is checked', async ({ page }) => {
@@ -46,12 +49,16 @@ test.describe('Interview prep page /interview/', () => {
     await input.fill('prompting');
     await expect(page.getByText(/Coinciden en el área/)).toBeVisible();
 
+    // Seleccionar un resultado navega a la pregunta (sin toggle de respuesta).
     const firstRow = page.locator('.search-result-row').first();
-    await firstRow.getByRole('button', { name: 'Ver respuesta' }).click();
+    const title = ((await firstRow.locator('.search-result-title').textContent()) ?? '').trim();
+    await firstRow.locator('.search-result-main').click();
+    await expect(page.getByRole('combobox', { name: 'Búsqueda global' })).toBeHidden();
+    await expect(page.locator('.detail-panel h2')).toHaveText(title);
     await expect(page.locator('.answer-panel')).toBeVisible();
   });
 
-  test('filters cards by search and can reveal the answer', async ({ page }) => {
+  test('filters cards by search and shows the answer without any toggle', async ({ page }) => {
     await page.goto('/interview/');
     await waitHydrated(page);
     const search = page.getByRole('searchbox', { name: 'Filtro de preguntas' });
@@ -59,13 +66,10 @@ test.describe('Interview prep page /interview/', () => {
     await expect(page.locator('.question-card')).toHaveCount(2);
     await expect(page.locator('.question-card').first()).toContainText(/stale/i);
 
-    await expect(page.locator('.answer-panel')).toBeHidden();
-    await page.getByRole('button', { name: 'Ver respuesta' }).click();
     await expect(page.locator('.answer-panel')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Ocultar respuesta' })).toBeVisible();
   });
 
-  test('supports every sort order, area filter and keyboard toggle', async ({ page }) => {
+  test('supports every sort order and area filter', async ({ page }) => {
     await page.goto('/interview/');
     await waitHydrated(page);
     const firstCard = page.locator('.question-card').first();
@@ -91,12 +95,10 @@ test.describe('Interview prep page /interview/', () => {
     await expect(page.locator('.question-card')).toHaveCount(381);
 
     const secondCard = page.locator('.question-card').nth(1);
+    const secondTitle = ((await secondCard.locator('.card-question').textContent()) ?? '').trim();
     await secondCard.dispatchEvent('click');
     await expect(secondCard).toHaveClass(/active/);
-
-    const answerToggle = page.getByRole('button', { name: 'Ver respuesta' });
-    await answerToggle.focus();
-    await answerToggle.press('Space');
+    await expect(page.locator('.detail-panel h2')).toHaveText(secondTitle);
     await expect(page.locator('.answer-panel')).toBeVisible();
   });
 
@@ -143,6 +145,78 @@ test.describe('Interview prep page /interview/', () => {
     await expect(page.locator('.interview-app')).toHaveClass(/level-style-cool/);
     await page.reload();
     await expect(page.locator('.interview-app')).toHaveClass(/level-style-cool/);
+  });
+
+  test('persists the view state (filters, sort and selection) across routes', async ({ page }) => {
+    await page.goto('/interview/');
+    await waitHydrated(page);
+    await page.getByRole('checkbox', { name: 'Agentes y MCP' }).uncheck();
+    await expect(page.locator('.question-card')).toHaveCount(367);
+    await page.getByRole('combobox', { name: 'Ordenar' }).selectOption('area');
+    await page.locator('.question-card').nth(3).dispatchEvent('click');
+    const selectedId = await page.locator('.detail-panel').getAttribute('data-question-id');
+    expect(selectedId).toBeTruthy();
+
+    // Astro es MPA: salir y volver remonta la isla desde cero.
+    await page.locator('nav.site-nav a[href="/ofertas/"]').click();
+    await expect(page).toHaveURL(/\/ofertas\/?$/);
+    await page.locator('nav.site-nav a[href="/interview/"]').click();
+    await waitHydrated(page);
+
+    await expect(page.getByRole('checkbox', { name: 'Agentes y MCP' })).not.toBeChecked();
+    await expect(page.locator('.question-card')).toHaveCount(367);
+    await expect(page.getByRole('combobox', { name: 'Ordenar' })).toHaveValue('area');
+    await expect(page.locator('.detail-panel')).toHaveAttribute('data-question-id', selectedId ?? '');
+    await expect(page.locator('.answer-panel')).toBeVisible();
+  });
+
+  test('restores only stored state that still exists in the bank', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        'interview-ui-state',
+        JSON.stringify({
+          version: 1,
+          filters: {
+            areas: ['agents-mcp', 'area-que-no-existe'],
+            levels: ['junior', 'semi-senior', 'senior', 'staff-lead', 'architect'],
+            roles: ['frontend', 'backend', 'fullstack'],
+            frequencies: ['muy-preguntada', 'clave-menos-frecuente', 'clave-muy-poco-frecuente'],
+            search: '',
+            onlyTricky: false,
+            onlyCode: false
+          },
+          sort: 'frequency',
+          randomSeed: 3,
+          selectedId: 'pregunta-que-no-existe',
+          onlyReview: false
+        })
+      );
+    });
+    await page.goto('/interview/');
+    await waitHydrated(page);
+
+    // El área que ya no existe se descarta y la válida se conserva (intersección).
+    await expect(page.locator('.question-card')).toHaveCount(14);
+    await expect(page.getByRole('combobox', { name: 'Ordenar' })).toHaveValue('frequency');
+    const selectedId = await page.locator('.detail-panel').getAttribute('data-question-id');
+    expect(selectedId).toBeTruthy();
+    expect(selectedId).not.toBe('pregunta-que-no-existe');
+  });
+
+  test('Limpiar resetea la vista y persiste el estado limpio', async ({ page }) => {
+    await page.goto('/interview/');
+    await waitHydrated(page);
+    await page.getByRole('searchbox', { name: 'Filtro de preguntas' }).fill('zzz sin resultados');
+    await expect(page.locator('.question-card')).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Limpiar', exact: true }).click();
+    await expect(page.locator('.question-card')).toHaveCount(381);
+    await expect(page.getByRole('searchbox', { name: 'Filtro de preguntas' })).toHaveValue('');
+
+    await page.reload();
+    await waitHydrated(page);
+    await expect(page.locator('.question-card')).toHaveCount(381);
+    await expect(page.getByRole('searchbox', { name: 'Filtro de preguntas' })).toHaveValue('');
   });
 
   test('persists learning state and notes and can clear them', async ({ page }) => {

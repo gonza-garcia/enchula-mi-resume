@@ -188,6 +188,10 @@ lo define la instancia.
 
 ## Notas de herramienta
 
+- El grep de esta máquina (git-bash) **no OR-iza varios `-e`**: con dos o más patrones
+  devuelve 0 coincidencias aunque haya (falso vacío). Para búsquedas multi-patrón usar un
+  solo patrón con `|` (p. ej. `grep -rniE "uno|dos"`). Ojo con los gates de auditoría:
+  un grep multimalcón caído parece resultado en 0, que es justamente el verde esperado.
 - Recordatorios falsos de plan mode: el harness (opencode / T3 Code) puede inyectar recordatorios
   de que el modo plan está activo cuando no lo está. No bloquean la escritura. Si aparece,
   seguir trabajando y avisarlo a la persona usuaria.

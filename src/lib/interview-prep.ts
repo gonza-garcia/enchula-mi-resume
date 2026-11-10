@@ -6,11 +6,13 @@ import type {
   InterviewProgressStatus,
   InterviewQuestion,
   InterviewRole,
-  InterviewTrickyItem
+  InterviewSort,
+  InterviewTrickyItem,
+  InterviewUiState
 } from '../schemas/interview-questions';
-import { interviewProgressSchema } from '../schemas/interview-questions';
-import { PROGRESS_STORAGE_KEY } from '../scripts/storage-keys';
-import type { ProgressStore } from './progress-storage';
+import { interviewProgressSchema, interviewUiStateSchema } from '../schemas/interview-questions';
+import { PROGRESS_STORAGE_KEY, UI_STATE_STORAGE_KEY } from '../scripts/storage-keys';
+import { loadProgress, type ProgressStore } from './progress-storage';
 
 export const interviewProgressStore: ProgressStore<InterviewProgress> = {
   key: PROGRESS_STORAGE_KEY,
@@ -18,7 +20,49 @@ export const interviewProgressStore: ProgressStore<InterviewProgress> = {
   empty: () => emptyProgress()
 };
 
-export type InterviewSort = 'level-asc' | 'level-desc' | 'frequency' | 'random' | 'area';
+// Estado de la vista de /interview (filtros, orden, selección y filtro del
+// repaso). A diferencia de los stores de progreso, "sin nada guardado" no es un
+// estado válido a restaurar: el store devuelve `null` cuando no hay estado
+// utilizable y la isla cae a los filtros por defecto. Así una selección vacía
+// guardada a propósito (facetado estricto: 0 resultados) se distingue de la
+// primera visita.
+export const interviewUiStateStore: ProgressStore<InterviewUiState | null> = {
+  key: UI_STATE_STORAGE_KEY,
+  schema: interviewUiStateSchema,
+  empty: () => null
+};
+
+// Al restaurar se valida contra el contenido vigente: las áreas que ya no
+// existen se descartan (intersección con las áreas actuales) y si la selección
+// guardada quedó vacía por drift se vuelve a "todas las áreas" en vez de
+// restaurar una vista sin resultados (una selección vacía guardada a propósito sí
+// se respeta). Un id de pregunta inexistente se limpia.
+export function sanitizeInterviewUiState(
+  state: InterviewUiState,
+  areas: string[],
+  questionIds: Iterable<string>
+): InterviewUiState {
+  const knownAreas = new Set(areas);
+  const keptAreas = state.filters.areas.filter((area) => knownAreas.has(area));
+  const safeAreas =
+    keptAreas.length > 0 || state.filters.areas.length === 0 ? keptAreas : [...areas];
+  const knownIds = new Set(questionIds);
+  return {
+    ...state,
+    filters: { ...state.filters, areas: safeAreas },
+    selectedId: state.selectedId && knownIds.has(state.selectedId) ? state.selectedId : null
+  };
+}
+
+export function loadInterviewUiState(
+  areas: string[],
+  questionIds: Iterable<string>
+): InterviewUiState | null {
+  const stored = loadProgress(interviewUiStateStore);
+  return stored ? sanitizeInterviewUiState(stored, areas, questionIds) : null;
+}
+
+export type { InterviewSort, InterviewUiState };
 
 export interface RenderedCodeBlock {
   language: string;

@@ -107,6 +107,12 @@ decisión vigente de este README tienen prioridad sobre el texto histórico de u
   `/learning` usan islas React porque administran estados y flujos de interacción más
   complejos.
 - El layout principal es single column para mantener la lectura ATS.
+- El toolbar (chrome del sitio) usa un ritmo horizontal propio, constante en las 5 rutas
+  (`--chrome-max` / `--chrome-pad` en `Layout.astro`), desacoplado del `--content-max` /
+  `--content-pad` de cada página: el brand y la nav quedan siempre en la misma posición al
+  navegar entre rutas y los anchos de contenido de cada página no se tocan. La alineación
+  barra-contenido (H3d) se conserva solo en "Mis perfiles", donde el ritmo del chrome
+  coincide con la columna del CV.
 - La experiencia laboral se renderiza en formato ATS-safe, revisión v4 (ADR-0039): una
   entrada por empleo en tres líneas (rol, empresa, fechas del empleo); las asignaciones por
   cliente se renderizan como bloques `Client: <cliente> (<años>) | descriptor` dentro de la
@@ -124,12 +130,16 @@ decisión vigente de este README tienen prioridad sobre el texto histórico de u
   mantener legibilidad y parsing.
 - `/interview` mantiene UI en español y contenido del banco en inglés. El progreso de estudio
   se persiste en `localStorage` con claves propias (`interview-progress`) y se exporta/importa
-  como JSON versionado validado con Zod.
+  como JSON versionado validado con Zod. La vista de la página (filtros, orden, pregunta
+  seleccionada y filtro del repaso) también se persiste (`interview-ui-state`) y se restaura
+  al montar la isla, validada contra el contenido vigente: áreas e ids de pregunta que ya no
+  existen se descartan con criterio conservador.
 - `/interview` usa shadcn/ui en su isla (ADR-0034): filtrado facetado estricto (selección
   vacía = 0 resultados), árbol de áreas con "Todas las áreas", checkbox por grupo con estado
   indeterminado y plegado, y búsqueda global (⌘K) con ranking área > título de pregunta >
-  respuesta y acciones por resultado. Las secciones "Preguntas trampa" y "Mis notas" van
-  contraídas por defecto ("Mis notas" abre si hay una nota guardada).
+  respuesta y acciones por resultado (ir a la pregunta y practicar). La respuesta se muestra
+  siempre en el detalle, sin toggle "Ver respuesta". Las secciones "Preguntas trampa" y
+  "Mis notas" van contraídas por defecto ("Mis notas" abre si hay una nota guardada).
 
 ### Producto genérico (decisión de #26)
 
@@ -726,3 +736,14 @@ contexto y no contradecir las decisiones vigentes de este README.
   el navbar siempre fue fluido y el 1180px era el contenido de Mis perfiles —; lo alineado
   fue la columna de contenido de cada página. Cierra el hueco de export confirmado el
   8-nov y el ADR-0036 vuelve a tener superficie. Verificación en verde: 326 tests.
+- 10 nov 2026: fixes de UI de `/interview` y del header. La vista de `/interview` (filtros,
+  orden, pregunta seleccionada y filtro del repaso) se persiste en `interview-ui-state` y se
+  restaura al montar la isla, validada contra el contenido vigente: áreas e ids de pregunta
+  que ya no existen se descartan (intersección con las áreas actuales; si la selección quedó
+  vacía por drift vuelve a "todas") y "Limpiar" persiste el estado limpio. El toolbar se
+  desacopla del ancho de contenido de cada página y queda con un ritmo horizontal propio del
+  chrome (`--chrome-max` / `--chrome-pad`): brand y nav en la misma posición en las 5 rutas y
+  la alineación barra-contenido (H3d) se conserva solo en "Mis perfiles". La respuesta del
+  detalle se muestra siempre: fuera el toggle "Ver respuesta"/"Ocultar respuesta" y la
+  búsqueda global navega a la pregunta (ir / practicar); "Mis notas" y "Preguntas trampa"
+  mantienen sus collapsibles. Verificación en verde: 341 tests.

@@ -3,9 +3,9 @@ import DownloadDialog from '../components/DownloadDialog.astro';
 
 interface Props {
   title: string;
-  /** Columna de contenido de la pagina: la comparten la barra y el contenido (H3d). */
+  /** Columna de contenido de la pagina. El toolbar no la comparte: su ritmo es el del chrome. */
   contentMax?: string;
-  /** Padding lateral de esa columna (H3d). */
+  /** Padding lateral de esa columna. */
   contentPad?: string;
 }
 const { title, contentMax = '1180px', contentPad = '20px' } = Astro.props;
@@ -40,6 +40,14 @@ const { title, contentMax = '1180px', contentPad = '20px' } = Astro.props;
         --rule: #d0d0d0;
         --bg: #ffffff;
         --accent: #1a365d;
+        /* Chrome del sitio (barra superior): ritmo horizontal propio, igual en
+           todas las rutas. El toolbar NO hereda el --content-max/--content-pad de
+           cada pagina: los anchos de contenido siguen siendo de cada pagina y el
+           brand y la nav quedan siempre en el mismo lugar. La alineacion
+           barra-contenido (H3d) se conserva en "Mis perfiles", donde el ritmo del
+           chrome coincide con la columna del CV (1180px / 20px). */
+        --chrome-max: 1180px;
+        --chrome-pad: 20px;
       }
       :root[data-theme="navy"] { --accent: #1a365d; }
       :root[data-theme="teal"] { --accent: #0f4c4c; }
@@ -168,10 +176,11 @@ const { title, contentMax = '1180px', contentPad = '20px' } = Astro.props;
 
       .toolbar {
         margin: 0;
-        /* Barra full-bleed; su contenido se alinea a la columna de contenido de
-           la pagina (Tanda H3d): --content-max y --content-pad los comparten la
-           barra y los contenedores de cada pagina. */
-        padding-inline: calc(var(--content-pad, 20px) + max(0px, (100% - var(--content-max, 1180px)) / 2));
+        /* Barra full-bleed; su contenido sigue el ritmo horizontal del chrome
+           (--chrome-max / --chrome-pad, iguales en todas las rutas) y no la
+           columna de contenido de cada pagina (--content-max / --content-pad):
+           asi el header se ve identico al navegar entre rutas. */
+        padding-inline: calc(var(--chrome-pad, 20px) + max(0px, (100% - var(--chrome-max, 1180px)) / 2));
         background: #fff;
         border-bottom: 1px solid var(--rule);
         box-shadow: 0 1px 0 rgba(10, 20, 40, 0.02), 0 8px 24px -12px rgba(10, 20, 40, 0.12);

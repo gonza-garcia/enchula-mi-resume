@@ -129,6 +129,36 @@ export const interviewProgressSchema = z.object({
   entries: z.record(z.string(), interviewProgressEntrySchema)
 });
 
+export const interviewSortSchema = z.enum([
+  'level-asc',
+  'level-desc',
+  'frequency',
+  'random',
+  'area'
+]);
+
+// Estado de la vista de /interview (filtros, orden y pregunta seleccionada).
+// Astro es MPA: al volver a la ruta la isla se remonta y sin esta clave se
+// pierde el estado de UI. Las áreas y los ids de pregunta son contenido dinámico
+// y se validan contra el banco vigente al restaurar (ver
+// `sanitizeInterviewUiState` en `src/lib/interview-prep.ts`).
+export const interviewUiStateSchema = z.object({
+  version: z.literal(1),
+  filters: z.object({
+    areas: z.array(nonEmptyString),
+    levels: z.array(interviewLevelSchema),
+    roles: z.array(interviewRoleSchema),
+    frequencies: z.array(interviewFrequencySchema),
+    search: z.string().max(2000),
+    onlyTricky: z.boolean(),
+    onlyCode: z.boolean()
+  }),
+  sort: interviewSortSchema,
+  randomSeed: z.int().min(0),
+  selectedId: z.string().min(1).nullable(),
+  onlyReview: z.boolean()
+});
+
 export type InterviewLevel = z.infer<typeof interviewLevelSchema>;
 export type InterviewRole = z.infer<typeof interviewRoleSchema>;
 export type InterviewFrequency = z.infer<typeof interviewFrequencySchema>;
@@ -144,3 +174,5 @@ export type InterviewTrickyQuiz = z.infer<typeof interviewTrickyQuizSchema>;
 export type InterviewProgressStatus = z.infer<typeof interviewProgressStatusSchema>;
 export type InterviewProgressEntry = z.infer<typeof interviewProgressEntrySchema>;
 export type InterviewProgress = z.infer<typeof interviewProgressSchema>;
+export type InterviewSort = z.infer<typeof interviewSortSchema>;
+export type InterviewUiState = z.infer<typeof interviewUiStateSchema>;
