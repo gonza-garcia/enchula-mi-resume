@@ -70,7 +70,7 @@ const ALL_AREAS = [
 const EXPECTED_COUNTS: Record<string, number> = {
   javascript: 20,
   typescript: 15,
-  html: 6,
+  html: 7,
   css: 6,
   accesibilidad: 8,
   react: 25,

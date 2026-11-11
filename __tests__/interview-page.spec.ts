@@ -18,7 +18,7 @@ test.describe('Interview prep page /interview/', () => {
     await page.goto('/interview/');
     await waitHydrated(page);
     await expect(page.getByRole('heading', { name: 'Prep entrevistas' })).toBeVisible();
-    await expect(page.locator('.question-card')).toHaveCount(380);
+    await expect(page.locator('.question-card')).toHaveCount(383);
     await expect(page.locator('.detail-panel')).toBeVisible();
     // La respuesta se muestra siempre: no hay toggle que abra ni cierre nada.
     await expect(page.locator('.answer-panel')).toBeVisible();
@@ -90,9 +90,9 @@ test.describe('Interview prep page /interview/', () => {
     await expect(firstCard).not.toHaveText(beforeShuffle ?? '');
 
     await page.getByRole('checkbox', { name: 'Agentes y MCP' }).uncheck();
-    await expect(page.locator('.question-card')).toHaveCount(366);
+    await expect(page.locator('.question-card')).toHaveCount(369);
     await page.getByRole('checkbox', { name: 'Agentes y MCP' }).check();
-    await expect(page.locator('.question-card')).toHaveCount(380);
+    await expect(page.locator('.question-card')).toHaveCount(383);
 
     const secondCard = page.locator('.question-card').nth(1);
     const secondTitle = ((await secondCard.locator('.card-question').textContent()) ?? '').trim();
@@ -179,7 +179,7 @@ test.describe('Interview prep page /interview/', () => {
     await page.goto('/interview/');
     await waitHydrated(page);
     await page.getByRole('checkbox', { name: 'Agentes y MCP' }).uncheck();
-    await expect(page.locator('.question-card')).toHaveCount(366);
+    await expect(page.locator('.question-card')).toHaveCount(369);
     await page.getByRole('combobox', { name: 'Ordenar' }).selectOption('area');
     await page.locator('.question-card').nth(3).dispatchEvent('click');
     const selectedId = await page.locator('.detail-panel').getAttribute('data-question-id');
@@ -192,7 +192,7 @@ test.describe('Interview prep page /interview/', () => {
     await waitHydrated(page);
 
     await expect(page.getByRole('checkbox', { name: 'Agentes y MCP' })).not.toBeChecked();
-    await expect(page.locator('.question-card')).toHaveCount(366);
+    await expect(page.locator('.question-card')).toHaveCount(369);
     await expect(page.getByRole('combobox', { name: 'Ordenar' })).toHaveValue('area');
     await expect(page.locator('.detail-panel')).toHaveAttribute('data-question-id', selectedId ?? '');
     await expect(page.locator('.answer-panel')).toBeVisible();
@@ -238,12 +238,12 @@ test.describe('Interview prep page /interview/', () => {
     await expect(page.locator('.question-card')).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Limpiar', exact: true }).click();
-    await expect(page.locator('.question-card')).toHaveCount(380);
+    await expect(page.locator('.question-card')).toHaveCount(383);
     await expect(page.getByRole('searchbox', { name: 'Filtro de preguntas' })).toHaveValue('');
 
     await page.reload();
     await waitHydrated(page);
-    await expect(page.locator('.question-card')).toHaveCount(380);
+    await expect(page.locator('.question-card')).toHaveCount(383);
     await expect(page.getByRole('searchbox', { name: 'Filtro de preguntas' })).toHaveValue('');
   });
 
