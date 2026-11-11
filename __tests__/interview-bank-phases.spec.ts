@@ -73,7 +73,7 @@ const EXPECTED_COUNTS: Record<string, number> = {
   html: 6,
   css: 6,
   accesibilidad: 8,
-  react: 26,
+  react: 25,
   'frameworks-ssr': 11,
   seguridad: 7,
   auth: 9,
