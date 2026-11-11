@@ -154,16 +154,16 @@ test.describe('Interview prep page /interview/', () => {
     await page.getByRole('searchbox', { name: 'Filtro de preguntas' }).fill('event-loop-model');
     await expect(page.locator('.question-card')).toHaveCount(1);
     await page.locator('.question-card').first().dispatchEvent('click');
-    await expect(page.locator('.detail-panel h2')).toContainText('Explain the JavaScript event loop');
-    await expect(page.locator('.curiosity-item h3')).toContainText('setTimeout');
+    await expect(page.locator('.detail-panel h2')).toContainText('What is the JavaScript event loop');
+    await expect(page.locator('.curiosity-item h3').first()).toContainText('setTimeout');
 
     await page.getByRole('button', { name: 'ES', exact: true }).click();
-    await expect(page.locator('.detail-panel h2')).toContainText('Explicá el event loop');
-    await expect(page.locator('.curiosity-item h3')).toContainText('garantiza');
+    await expect(page.locator('.detail-panel h2')).toContainText('¿Qué es el event loop');
+    await expect(page.locator('.curiosity-item h3').filter({ hasText: 'congela la pestaña' })).toHaveCount(1);
 
     await page.reload();
     await waitHydrated(page);
-    await expect(page.locator('.detail-panel h2')).toContainText('Explicá el event loop');
+    await expect(page.locator('.detail-panel h2')).toContainText('¿Qué es el event loop');
   });
 
   test('persists the selected level color style independently', async ({ page }) => {
