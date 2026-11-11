@@ -1,6 +1,6 @@
 ---
 name: research-content
-description: Investigar un área del banco de entrevistas contra fuentes primarias y producir preguntas nuevas citadas. Usar cuando haya que cubrir temas de una fase del plan de estudios sin preguntas en el banco, o cuando el usuario pida research de contenido de entrevistas. NO diseña quizzes ni tricky follow-ups (eso es content-designer) ni captura planes (eso es capture-learning-plan).
+description: Investigar un área del banco de entrevistas contra fuentes primarias y producir preguntas nuevas citadas. Usar cuando haya que cubrir temas de una fase del plan de estudios sin preguntas en el banco, o cuando el usuario pida research de contenido de entrevistas. NO diseña quizzes ni curiosidades (eso es content-designer) ni captura planes (eso es capture-learning-plan).
 ---
 
 # Research Content
@@ -17,7 +17,7 @@ schema Zod de `src/schemas/interview-questions.ts`.
   `src/schemas/interview-questions.ts`).
 - **Escribe**: preguntas nuevas citadas en el archivo de su área. El merge en
   disco lo decide quien invoca: la skill entrega JSON validado.
-- **No toca**: los tricky y quizzes (`<area>.tricky-quiz.json`, son de
+- **No toca**: las curiosidades y los quizzes (`<area>.quiz.json`, son de
   content-designer), el schema del banco, los id ya escritos ni el plan.
 
 ## Principios
@@ -25,8 +25,9 @@ schema Zod de `src/schemas/interview-questions.ts`.
 1. **Fuentes primarias, sin fabricar.** Documentación oficial, especificaciones,
    libros y artículos del autor original. Cada pregunta lleva de 1 a 3 fuentes
    con label y URL. Si un dato no se puede citar, no entra.
-2. **Contenido en inglés.** El banco vive en inglés (regla vigente del repo). La
-   UI de `/interview` es la que está en español.
+2. **Contenido bilingüe.** `question` y `answer` llevan `{en, es}`: `en` siempre
+   (el idioma de las entrevistas) y `es` por traducción, que puede quedar vacío
+   (la UI cae al otro idioma). La UI de `/interview` es la que está en español.
 3. **Claims de demanda con dataset y ventana temporal.** Cuando el material
    mencione demanda de mercado ("N ofertas piden X"), citar qué dataset y qué
    ventana lo respaldan. Hay dos datasets verificados y con denominadores
@@ -61,11 +62,13 @@ schema Zod de `src/schemas/interview-questions.ts`.
 2. **Investigar.** Leer fuentes primarias (fetch de documentación y artículos;
    para X, el shim de twitter de agent-reach y como fallback browser-skill).
    Anotar para cada hecho la URL exacta.
-3. **Escribir preguntas nuevas** en inglés al schema del banco: id con el prefijo
+3. **Escribir preguntas nuevas** al schema del banco: id con el prefijo
    del área (los id existentes se conservan siempre; los nuevos siguen la
-   numeración del área), topic, level, roles, frequency, question, answer,
-   codeBlocks (si aplica) y sources. Una idea por pregunta; respuestas que se
-   puedan defender en entrevista.
+   numeración del área), topic, level, roles, frequency, question, answer
+   (markdown real: párrafos, listas, tablas y bloques de código cercados con
+   caption en el info string, p. ej. ```` ```js caption="Output: A, D, B, C" ````)
+   y sources. Una idea por pregunta; respuestas que se puedan defender en
+   entrevista.
 4. **QA de contenido.** Verificar ids únicos en todo el banco, fuentes que
    abren, claims sin fuente eliminados y que ningún bloque rompe el schema.
 5. **Entregar.** JSON validado contra `interviewQuestionBankSchema` para mergear

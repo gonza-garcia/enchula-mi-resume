@@ -20,7 +20,7 @@ Las skills del flujo de trabajo viven en el repo, en `skills/job-seeking/`:
 - `research-content/SKILL.md`: investiga un área del banco de entrevistas contra
   fuentes primarias (sin fabricar) y produce preguntas nuevas citadas al schema
   del banco. Los claims de demanda citan dataset y ventana temporal.
-- `content-designer/SKILL.md`: deriva tricky follow-ups y quizzes (MCQs y
+- `content-designer/SKILL.md`: deriva curiosidades y quizzes (MCQs y
   escenarios de código) del banco ya validado, por área o por fase del plan.
 - `capture-learning-plan/SKILL.md`: captura el plan de estudios del usuario y lo
   escribe como `src/content/learning-plan.json` (contrato de ADR-0028), con

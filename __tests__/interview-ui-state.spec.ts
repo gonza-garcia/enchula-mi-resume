@@ -21,7 +21,7 @@ function makeUiState(overrides: Partial<InterviewUiState> = {}): InterviewUiStat
       roles: ['frontend'],
       frequencies: ['muy-preguntada'],
       search: '',
-      onlyTricky: false,
+      onlyCuriosidades: false,
       onlyCode: false
     },
     sort: 'level-asc',

@@ -1,5 +1,4 @@
 import {
-  Fragment,
   startTransition,
   useDeferredValue,
   useEffect,
@@ -9,15 +8,16 @@ import {
 } from 'react';
 import {
   INTERVIEW_FREQUENCIES,
+  INTERVIEW_LANGUAGES,
   INTERVIEW_LEVELS,
   INTERVIEW_ROLES,
   type InterviewFrequency,
+  type InterviewLanguage,
   type InterviewLevel,
   type InterviewMcq,
   type InterviewProgress,
   type InterviewProgressEntry,
-  type InterviewRole,
-  type InterviewScenario
+  type InterviewRole
 } from '../../schemas/interview-questions';
 import {
   areaLabel,
@@ -28,6 +28,7 @@ import {
   interviewUiStateStore,
   LEVEL_LABELS,
   loadInterviewUiState,
+  localizedText,
   PROGRESS_STATUSES,
   PROGRESS_STATUS_LABELS,
   questionProgress,
@@ -40,7 +41,7 @@ import {
   type InterviewSearchLevel,
   type InterviewSort,
   type InterviewUiState,
-  type RenderedCodeBlock
+  type RenderedCodeShell
 } from '../../lib/interview-prep';
 import {
   CLEAR_MESSAGE,
@@ -79,7 +80,7 @@ import {
   setItemStatus
 } from '../../lib/interview-review-state';
 import type { InterviewReviewPlan, InterviewReviewState } from '../../schemas/interview-review-plan';
-import { LEVEL_STYLE_STORAGE_KEY } from '../../scripts/storage-keys';
+import { INTERVIEW_LANG_STORAGE_KEY, LEVEL_STYLE_STORAGE_KEY } from '../../scripts/storage-keys';
 
 const LEVEL_STYLES = ['traffic', 'cool', 'neutral'] as const;
 type LevelStyle = (typeof LEVEL_STYLES)[number];
@@ -94,8 +95,12 @@ interface SourceLink {
   url: string;
 }
 
-interface RenderedScenario extends Omit<InterviewScenario, 'code'> {
-  code: RenderedCodeBlock;
+interface RenderedScenario {
+  id: string;
+  prompt: string;
+  rubric: string[];
+  code: RenderedCodeShell;
+  modelAnswerHtml: string;
 }
 
 interface QuizView {
@@ -136,7 +141,7 @@ function initialFilters(areas: string[]): InterviewFilters {
     roles: ALL_ROLES,
     frequencies: ALL_FREQUENCIES,
     search: '',
-    onlyTricky: false,
+    onlyCuriosidades: false,
     onlyCode: false
   };
 }
@@ -149,63 +154,9 @@ function levelClass(level: InterviewLevel): string {
   return `level-${level}`;
 }
 
-function InlineText({ text }: { text: string }) {
-  const parts = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g);
-  return (
-    <>
-      {parts.map((part, index) => {
-        if (part.startsWith('`') && part.endsWith('`')) {
-          return <code key={`${part}-${index}`}>{part.slice(1, -1)}</code>;
-        }
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return <strong key={`${part}-${index}`}>{part.slice(2, -2)}</strong>;
-        }
-        return <Fragment key={`${part}-${index}`}>{part}</Fragment>;
-      })}
-    </>
-  );
-}
-
-function MarkdownText({ text }: { text: string }) {
-  const blocks = text.trim().split(/\n\s*\n/).filter(Boolean);
-  return (
-    <div className="answer-copy">
-      {blocks.map((block, blockIndex) => {
-        const lines = block.split(/\r?\n/);
-        const isList = lines.every((line) => line.trimStart().startsWith('- '));
-        if (isList) {
-          return (
-            <ul key={`${blockIndex}-${block}`}>
-              {lines.map((line) => <li key={line}><InlineText text={line.trimStart().slice(2)} /></li>)}
-            </ul>
-          );
-        }
-        return (
-          <p key={`${blockIndex}-${block}`}>
-            {lines.map((line, lineIndex) => (
-              <Fragment key={`${line}-${lineIndex}`}>
-                {lineIndex > 0 && <br />}
-                <InlineText text={line} />
-              </Fragment>
-            ))}
-          </p>
-        );
-      })}
-    </div>
-  );
-}
-
-function CodeBlock({ block }: { block: RenderedCodeBlock }) {
-  return (
-    <figure className="interview-code">
-      <div className="code-label">
-        <span>{block.language}</span>
-        <span>{block.caption}</span>
-      </div>
-      <div className="code-output" dangerouslySetInnerHTML={{ __html: block.html }} />
-    </figure>
-  );
-}
+// El markdown (prosa, tablas y code blocks con shell de Shiki) viene
+// pre-renderizado del build; en la isla solo queda el fallback de idioma campo
+// por campo con `localizedText` (ADR-0046).
 
 // Búsqueda global (cambio 6): Command con ranking área > título > respuesta y
 // acciones claras por resultado (ir / practicar). Seleccionar un resultado
@@ -224,6 +175,7 @@ function GlobalSearch({
   groups,
   totalQuestions,
   areaLabels,
+  lang,
   onOpenChange,
   onQueryChange,
   onGoTo,
@@ -234,6 +186,7 @@ function GlobalSearch({
   groups: InterviewSearchGroups;
   totalQuestions: number;
   areaLabels: Record<string, string>;
+  lang: InterviewLanguage;
   onOpenChange: (open: boolean) => void;
   onQueryChange: (query: string) => void;
   onGoTo: (questionId: string) => void;
@@ -279,7 +232,10 @@ function GlobalSearch({
                       className="search-result-main"
                     >
                       <span className="search-result-copy">
-                        <span className="search-result-title">{question.question.en}</span>
+                        <span
+                          className="search-result-title"
+                          dangerouslySetInnerHTML={{ __html: localizedText(question.rendered.question, lang) }}
+                        />
                         <span className="search-result-meta">
                           {areaLabel(question.area, areaLabels)} · {LEVEL_LABELS[question.level]}
                         </span>
@@ -352,7 +308,7 @@ function NoteSection({
             aria-label="Mis notas"
             value={progress.note}
             onChange={(event) => onProgressChange({ note: event.target.value })}
-            placeholder="Tu resumen, trampas a recordar, links..."
+            placeholder="Tu resumen, ideas a recordar, links..."
             rows={4}
           />
         </div>
@@ -565,10 +521,10 @@ function FilterSidebar({
         <label className="switch-row">
           <input
             type="checkbox"
-            checked={filters.onlyTricky}
-            onChange={(event) => onUpdate((current) => ({ ...current, onlyTricky: event.target.checked }))}
+            checked={filters.onlyCuriosidades}
+            onChange={(event) => onUpdate((current) => ({ ...current, onlyCuriosidades: event.target.checked }))}
           />
-          <span>Solo tricky</span>
+          <span>Con curiosidades</span>
         </label>
         <label className="switch-row">
           <input
@@ -603,11 +559,13 @@ function FilterSidebar({
 function QuestionCard({
   question,
   areaLabel,
+  lang,
   active,
   onSelect
 }: {
   question: InterviewQuestionView;
   areaLabel: string;
+  lang: InterviewLanguage;
   active: boolean;
   onSelect: () => void;
 }) {
@@ -623,12 +581,15 @@ function QuestionCard({
         <span className="card-index">{question.id.split('-').slice(-1)[0]}</span>
       </span>
       <span className="card-area">{areaLabel}</span>
-      <span className="card-question">{question.question.en}</span>
+      <span
+        className="card-question"
+        dangerouslySetInnerHTML={{ __html: localizedText(question.rendered.question, lang) }}
+      />
       <span className="card-footer">
         <span>{question.topic.replaceAll('-', ' ')}</span>
         <span className="card-flags" aria-label="Características">
-          {question.trickies.length > 0 && <span title="Tiene tricky">T</span>}
-          {question.codeBlocks.length > 0 && <span title="Tiene código">&lt;/&gt;</span>}
+          {question.curiosidades.length > 0 && <span title="Tiene curiosidades">C</span>}
+          {question.hasCode && <span title="Tiene código">&lt;/&gt;</span>}
         </span>
       </span>
     </button>
@@ -638,12 +599,14 @@ function QuestionCard({
 function DetailPanel({
   question,
   areaLabel,
+  lang,
   progress,
   onPractice,
   onProgressChange
 }: {
   question: InterviewQuestionView | null;
   areaLabel: string;
+  lang: InterviewLanguage;
   progress: InterviewProgressEntry;
   onPractice: () => void;
   onProgressChange: (patch: Partial<InterviewProgressEntry>) => void;
@@ -671,36 +634,37 @@ function DetailPanel({
         </button>
       </div>
       <p className="detail-topic">{question.topic.replaceAll('-', ' ')}</p>
-      <h2>{question.question.en}</h2>
+      <h2 dangerouslySetInnerHTML={{ __html: localizedText(question.rendered.question, lang) }} />
 
       <div className="answer-panel">
-        <MarkdownText text={question.answer.en} />
-        {question.codeBlocks.map((block) => <CodeBlock key={`${question.id}-${block.caption}`} block={block} />)}
+        <div
+          className="answer-copy"
+          dangerouslySetInnerHTML={{ __html: localizedText(question.rendered.answer, lang) }}
+        />
       </div>
 
-      {question.trickies.length > 0 && (
-        <Collapsible key={`tricky-${question.id}`} className="tricky-list" defaultOpen={false}>
+      {question.curiosidades.length > 0 && (
+        <section className="curiosity-list" key={`curiosidades-${question.id}`}>
           <div className="section-head">
-            <CollapsibleTrigger className="section-kicker section-trigger" type="button">
+            <div className="section-kicker">
               <span className="section-dot" />
-              <span className="section-trigger-label">Preguntas trampa ({question.trickies.length})</span>
-              <span className="section-trigger-mark" aria-hidden="true" />
-            </CollapsibleTrigger>
+              <span className="section-trigger-label">Curiosidades ({question.curiosidades.length})</span>
+            </div>
             <HelpTip
-              label="¿Qué es una pregunta trampa?"
-              text="Follow-ups que buscan que justifiques, acotes o detectes el límite de tu respuesta. Contestar de memoria sin reconocer la trampa resta puntos."
+              label="¿Qué es una curiosidad?"
+              text="Repreguntas típicas del entrevistador que buscan que justifiques, acotes o matices tu respuesta. Contestarlas bien muestra que conocés el tema hasta su límite."
             />
           </div>
-          <CollapsibleContent className="tricky-items">
-            {question.trickies.map((tricky, index) => (
-              <article key={`${tricky.question}-${index}`} className="tricky-item">
-                <h3>{tricky.question}</h3>
-                <p><strong>Respuesta:</strong> {tricky.answer}</p>
-                <p className="trap-note"><strong>El trap:</strong> {tricky.trap}</p>
-              </article>
-            ))}
-          </CollapsibleContent>
-        </Collapsible>
+          {question.rendered.curiosidades.map((curiosity, index) => (
+            <article key={`${question.id}-curiosity-${index}`} className="curiosity-item">
+              <h3 dangerouslySetInnerHTML={{ __html: localizedText(curiosity.question, lang) }} />
+              <div
+                className="answer-copy"
+                dangerouslySetInnerHTML={{ __html: localizedText(curiosity.answer, lang) }}
+              />
+            </article>
+          ))}
+        </section>
       )}
 
       <div className="progress-block">
@@ -796,10 +760,13 @@ function QuizPanel({ quiz, areaTitle }: { quiz: QuizView; areaTitle: string }) {
         {quiz.scenarios.map((scenario) => (
           <details className="scenario" key={scenario.id}>
             <summary>{scenario.prompt}</summary>
-            <CodeBlock block={scenario.code} />
+            <div dangerouslySetInnerHTML={{ __html: scenario.code.html }} />
             <div className="scenario-answer">
               <h4>Respuesta modelo</h4>
-              <MarkdownText text={scenario.modelAnswer} />
+              <div
+                className="answer-copy"
+                dangerouslySetInnerHTML={{ __html: scenario.modelAnswerHtml }}
+              />
               <h4>Qué busca el entrevistador</h4>
               <ul>
                 {scenario.rubric.map((item) => <li key={item}>{item}</li>)}
@@ -819,6 +786,7 @@ function ReviewPanel({
   plan,
   state,
   questionsById,
+  lang,
   onlyReview,
   onToggleOnlyReview,
   onToggleMark,
@@ -828,6 +796,7 @@ function ReviewPanel({
   plan: InterviewReviewPlan;
   state: InterviewReviewState;
   questionsById: Map<string, InterviewQuestionView>;
+  lang: InterviewLanguage;
   onlyReview: boolean;
   onToggleOnlyReview: () => void;
   onToggleMark: (itemId: string, done: boolean) => void;
@@ -878,17 +847,24 @@ function ReviewPanel({
                 />
               </div>
               <div className="review-question-chips">
-                {item.questionIds.map((questionId) => (
-                  <button
-                    key={questionId}
-                    type="button"
-                    className="review-chip"
-                    title={questionsById.get(questionId)?.question.en ?? questionId}
-                    onClick={() => onGoToQuestion(questionId)}
-                  >
-                    {questionsById.get(questionId)?.question.en ?? questionId}
-                  </button>
-                ))}
+                {item.questionIds.map((questionId) => {
+                  const target = questionsById.get(questionId);
+                  return (
+                    <button
+                      key={questionId}
+                      type="button"
+                      className="review-chip"
+                      title={target ? localizedText(target.question, lang) : questionId}
+                      onClick={() => onGoToQuestion(questionId)}
+                    >
+                      <span
+                        dangerouslySetInnerHTML={{
+                          __html: target ? localizedText(target.rendered.question, lang) : questionId
+                        }}
+                      />
+                    </button>
+                  );
+                })}
               </div>
             </li>
           );
@@ -938,6 +914,9 @@ export default function InterviewPrep({
   const [randomSeed, setRandomSeed] = useState(() => restoredUi?.randomSeed ?? 1);
   const [selectedId, setSelectedId] = useState<string | null>(() => restoredUi?.selectedId ?? null);
   const [levelStyle, setLevelStyle] = useState<LevelStyle>('traffic');
+  // Idioma del contenido EN/ES (ADR-0046): default EN (el idioma de las
+  // entrevistas) y persistido en `interview-lang`. Los textos de UI no cambian.
+  const [lang, setLang] = useState<InterviewLanguage>('en');
   const [practiceArea, setPracticeArea] = useState<string | null>(null);
   const [progress, setProgress] = useState<InterviewProgress>(() =>
     loadProgress(interviewProgressStore)
@@ -983,6 +962,15 @@ export default function InterviewPrep({
     } catch {}
   }, []);
 
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(INTERVIEW_LANG_STORAGE_KEY);
+      if (stored && (INTERVIEW_LANGUAGES as readonly string[]).includes(stored)) {
+        setLang(stored as InterviewLanguage);
+      }
+    } catch {}
+  }, []);
+
   // Marker de hidratación para las specs, igual que OffersManager con
   // data-offers-hydrated: sin esto, interactuar antes de hidratar pierde los
   // onChange de React (era la causa del flake de los sorts).
@@ -996,6 +984,12 @@ export default function InterviewPrep({
       localStorage.setItem(LEVEL_STYLE_STORAGE_KEY, levelStyle);
     } catch {}
   }, [levelStyle]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(INTERVIEW_LANG_STORAGE_KEY, lang);
+    } catch {}
+  }, [lang]);
 
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get('quiz');
@@ -1160,18 +1154,32 @@ export default function InterviewPrep({
         <div className="interview-header-inner">
           <div className="interview-brand-row">
             <span className="header-label">Interview prep</span>
+            <div className="lang-toggle" role="group" aria-label="Idioma del contenido">
+              {INTERVIEW_LANGUAGES.map((language) => (
+                <button
+                  key={language}
+                  type="button"
+                  className={lang === language ? 'active' : undefined}
+                  aria-pressed={lang === language}
+                  onClick={() => setLang(language)}
+                >
+                  {language.toUpperCase()}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="interview-heading">
             <div>
               <p className="eyebrow">Una pregunta a la vez</p>
               <h1>Prep entrevistas</h1>
               <p className="header-description">
-                Un mapa de estudio para responder con claridad, reconocer el trap y practicar lo que realmente preguntan.
+                Un mapa de estudio para responder con claridad, ampliar cada respuesta con curiosidades
+                y practicar lo que realmente preguntan.
               </p>
             </div>
             <div className="header-stats" aria-label="Resumen del banco">
               <div><strong>{questions.length}</strong><span>preguntas</span></div>
-              <div><strong>{questions.filter((question) => question.trickies.length > 0).length}</strong><span>con tricky</span></div>
+              <div><strong>{questions.filter((question) => question.curiosidades.length > 0).length}</strong><span>con curiosidades</span></div>
               <div><strong>{quizzes.length}</strong><span>áreas de quiz</span></div>
             </div>
           </div>
@@ -1197,6 +1205,7 @@ export default function InterviewPrep({
               plan={activeReview}
               state={reviewState}
               questionsById={questionsById}
+              lang={lang}
               onlyReview={onlyReview}
               onToggleOnlyReview={() => setOnlyReview((value) => !value)}
               onToggleMark={toggleReviewMark}
@@ -1261,6 +1270,7 @@ export default function InterviewPrep({
           <DetailPanel
             question={selected}
             areaLabel={selectedAreaLabel}
+            lang={lang}
             progress={selected ? questionProgress(progress, selected.id) : { status: 'sin-marcar', note: '' }}
             onPractice={() => selected && showPractice(selected.area)}
             onProgressChange={updateQuestionProgress}
@@ -1281,6 +1291,7 @@ export default function InterviewPrep({
                     key={question.id}
                     question={question}
                     areaLabel={areaLabel(question.area, areaLabels)}
+                    lang={lang}
                     active={question.id === selected?.id}
                     onSelect={() => setSelectedId(question.id)}
                   />
@@ -1367,6 +1378,7 @@ export default function InterviewPrep({
         groups={searchGroups}
         totalQuestions={questions.length}
         areaLabels={areaLabels}
+        lang={lang}
         onOpenChange={setSearchOpen}
         onQueryChange={setSearchQuery}
         onGoTo={goToQuestion}

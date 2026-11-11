@@ -128,18 +128,22 @@ decisión vigente de este README tienen prioridad sobre el texto histórico de u
   textos verbatim (MD con frontmatter, TXT sin).
 - La impresión conserva el accent elegido para headings y URLs, con texto y fondo claros para
   mantener legibilidad y parsing.
-- `/interview` mantiene UI en español y contenido del banco en inglés. El progreso de estudio
-  se persiste en `localStorage` con claves propias (`interview-progress`) y se exporta/importa
-  como JSON versionado validado con Zod. La vista de la página (filtros, orden, pregunta
-  seleccionada y filtro del repaso) también se persiste (`interview-ui-state`) y se restaura
-  al montar la isla, validada contra el contenido vigente: áreas e ids de pregunta que ya no
-  existen se descartan con criterio conservador.
+- `/interview` mantiene UI en español y contenido del banco bilingüe EN/ES (ADR-0046):
+  `question` y `answer` son markdown real en ambos idiomas (`es` puede quedar vacío y la UI
+  cae al otro idioma campo por campo), con toggle EN/ES en el header persistido en
+  `interview-lang` (default EN). El progreso de estudio se persiste en `localStorage` con
+  claves propias (`interview-progress`) y se exporta/importa como JSON versionado validado
+  con Zod. La vista de la página (filtros, orden, pregunta seleccionada y filtro del repaso)
+  también se persiste (`interview-ui-state`) y se restaura al montar la isla, validada contra
+  el contenido vigente: áreas e ids de pregunta que ya no existen se descartan con criterio
+  conservador.
 - `/interview` usa shadcn/ui en su isla (ADR-0034): filtrado facetado estricto (selección
   vacía = 0 resultados), árbol de áreas con "Todas las áreas", checkbox por grupo con estado
   indeterminado y plegado, y búsqueda global (⌘K) con ranking área > título de pregunta >
-  respuesta y acciones por resultado (ir a la pregunta y practicar). La respuesta se muestra
-  siempre en el detalle, sin toggle "Ver respuesta". Las secciones "Preguntas trampa" y
-  "Mis notas" van contraídas por defecto ("Mis notas" abre si hay una nota guardada).
+  respuesta (ambos idiomas indexados) y acciones por resultado (ir a la pregunta y practicar).
+  La respuesta se muestra siempre en el detalle, sin toggle "Ver respuesta". "Curiosidades"
+  es una sección de contenido al final de la respuesta (no colapsable) y "Mis notas" va
+  contraída por defecto (abre si hay una nota guardada).
 
 ### Producto genérico (decisión de #26)
 
@@ -252,9 +256,26 @@ decisión vigente de este README tienen prioridad sobre el texto histórico de u
   un tema sin fuente citable queda como gap del plan de repaso y no se inventa.
 - Los niveles se reparten a propósito (junior a architect): `level` refleja a quién se
   le pregunta en entrevistas, no la dificultad abstracta del tema.
-- `content-designer` deriva tricky y quiz de preguntas ya validadas; cuando un área está
+- `content-designer` deriva curiosidades y quiz de preguntas ya validadas; cuando un área está
   en el cap de 12 MCQs, la rotación (sacar un MCQ duplicado o ya cubierto, entrar uno
   derivado de pregunta nueva) es el mecanismo para renovar el quiz.
+
+### Banco de entrevistas: contenido bilingüe, curiosidades y taxonomía 34 (ADR-0046)
+
+- El contenido del banco es **markdown real bilingüe** (`question` y `answer` con `{en, es}`;
+  `en` siempre, `es` puede quedar vacío y la UI cae al otro idioma campo por campo). El
+  código vive dentro del markdown como fences con caption en el info string
+  (```` ```js caption="Output: A, D, B, C" ````) y se pre-renderiza con Shiki en el build con
+  el shell de código (header de lenguaje + «N líneas», gutter numerado, a11y).
+- **Curiosidades** (`curiosidades: [{ question, answer }]`, bilingüe) reemplaza a los
+  follow-ups previos: repreguntas típicas del entrevistador al final de la respuesta, sin
+  campo `trap`. El quiz por área vive en `<area>.quiz.json` con solo `quiz: { mcqs,
+  scenarios }` (el área sale del nombre del archivo).
+- **Taxonomía de 34 áreas**: los 9 splits aprobados por `topic` (javascript/typescript,
+  html/css/accesibilidad, react/frameworks-ssr, seguridad/auth, backend/bases-de-datos,
+  mobile-web/react-native, http-y-tiempo-real/diseno-de-apis, git/ci-cd-y-cloud,
+  estado-en-la-ui/data-fetching). Los ids de pregunta no cambian y conservan su prefijo
+  histórico (ADR-0030): el progreso y los planes de repaso siguen válidos.
 
 ## Comandos
 
@@ -324,6 +345,7 @@ están en `docs/deploy.md`.
 | 0043 | Vigente | Fuentes y barridos del pipeline de búsqueda |
 | 0044 | Vigente | Estados de la postulación a cuatro (`borrador · enviada · confirmada · descartada`) |
 | 0045 | Vigente | Retiro del puente de prompts: la app se opera con un agente corriendo las skills |
+| 0046 | Vigente | Contenido bilingüe markdown, curiosidades y taxonomía de 34 áreas |
 
 Los ADRs personales (decisiones del CV y hosting de las apps personales) están en
 el repo privado de planning y son legado suyo. Los ADRs históricos se conservan como
@@ -747,3 +769,20 @@ contexto y no contradecir las decisiones vigentes de este README.
   detalle se muestra siempre: fuera el toggle "Ver respuesta"/"Ocultar respuesta" y la
   búsqueda global navega a la pregunta (ir / practicar); "Mis notas" y "Preguntas trampa"
   mantienen sus collapsibles. Verificación en verde: 341 tests.
+- 10 nov 2026 (Fase I de `/interview`, F1+F2): **contrato final del contenido, bilingüe, y
+  taxonomía de 34 áreas** (ADR-0046). El banco pasa a markdown real bilingüe
+  (`question`/`answer` con `{en, es}`; `en` siempre, `es` puede quedar vacío con fallback en
+  la UI campo por campo, toggle EN/ES en el header persistido en `interview-lang`, búsqueda
+  indexando ambos idiomas) y el código vive dentro del markdown como fences con caption en el
+  info string (```` ```js caption="…" ````), pre-renderizados con Shiki en el build con shell
+  de código accesible (header de lenguaje + «N líneas», gutter numerado hermano del HTML de
+  Shiki, `role="group"` + aria-label, `tabindex=0` en el pre). El campo `codeBlocks`
+  desaparece y los bloques existentes se migran como fences al final de la respuesta. El
+  concepto de follow-up se retira con su campo `trap` y sus 24 archivos `*.tricky-quiz.json`:
+  **curiosidades** (`curiosidades: [{question, answer}]`, 529 items migrados) vive en su
+  pregunta de origen y el quiz por área queda en `<area>.quiz.json` con solo
+  `quiz: {mcqs, scenarios}` (el reparto de los quizzes entre las áreas hijas va por afinidad
+  temática). La UI renombra "Solo tricky" a "Con curiosidades" y la flag "T" a "C". La
+  taxonomía pasa de 24 a 34 áreas con los 9 splits aprobados por `topic`; los ids de pregunta
+  no cambian (prefijo histórico) y progreso y planes de repaso siguen válidos. Migración
+  mecánica de formato: las respuestas se reescriben en la F3.

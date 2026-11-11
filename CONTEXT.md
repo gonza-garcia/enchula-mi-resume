@@ -96,7 +96,7 @@ _Avoid_: adaptador de CV, tailoring
 ### Interview prep
 
 **Área**:
-Una de las 20 categorías temáticas del banco de preguntas de entrevista. Es un filtro
+Una de las 34 categorías temáticas del banco de preguntas de entrevista. Es un filtro
 principal y también identifica el archivo de contenido de origen.
 _Avoid_: categoría suelta, subject
 
@@ -115,14 +115,16 @@ Señal híbrida de aparición esperada en entrevistas: Muy preguntada, Clave, me
 frecuente o Clave, muy poco frecuente.
 _Avoid_: prioridad
 
-**Tricky**:
-Follow-up diseñado para descubrir una confusión común o un límite importante de la
-respuesta principal. Explica la respuesta, el trap y por qué falla la intuición rápida.
-_Avoid_: trick question, pregunta capciosa
+**Curiosidad**:
+Repregunta típica del entrevistador con su respuesta corta, al final de la respuesta
+principal: el matiz o el límite que justifica la respuesta. Vive en la pregunta de
+origen (`curiosidades`) y se renderiza como sección "Curiosidades".
+_Avoid_: follow-up tricky, pregunta capciosa, trampa
 
 **Banco**:
-Conjunto curado de preguntas investigadas, con respuesta en inglés, metadata, fuentes
-y, cuando corresponde, bloques de código.
+Conjunto curado de preguntas investigadas, con pregunta y respuesta como markdown real
+bilingüe (`{en, es}`, `es` puede quedar vacío con fallback en la UI), metadata, fuentes
+y, cuando corresponde, bloques de código dentro del markdown.
 _Avoid_: question dump, lista de preguntas
 
 **Quiz**:
@@ -136,8 +138,8 @@ la persona usuaria, nunca en el repositorio.
 _Avoid_: status, checklist
 
 **Nota de estudio**:
-Texto plano que la persona usuaria deja en una pregunta: resumen, trampas o links.
-Sin formato rico ni HTML.
+Texto plano que la persona usuaria deja en una pregunta: resumen, ideas a recordar o
+links. Sin formato rico ni HTML.
 _Avoid_: comentario, apunte
 
 **Progreso de estudio**:

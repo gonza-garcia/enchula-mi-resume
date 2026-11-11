@@ -2,6 +2,17 @@ import { z } from 'astro/zod';
 
 const nonEmptyString = z.string().min(1);
 
+// Texto bilingüe del banco (ADR-0046): `en` siempre está; `es` puede quedar
+// vacío (la traducción completa llega en la reescritura de contenido) y la UI
+// cae al otro idioma cuando el idioma activo está vacío, campo por campo.
+export const localizedTextSchema = z.object({
+  en: nonEmptyString,
+  es: z.string()
+});
+
+export const interviewLanguageSchema = z.enum(['en', 'es']);
+export const INTERVIEW_LANGUAGES = interviewLanguageSchema.options;
+
 export const interviewLevelSchema = z.enum([
   'junior',
   'semi-senior',
@@ -22,19 +33,28 @@ export const INTERVIEW_LEVELS = interviewLevelSchema.options;
 export const INTERVIEW_ROLES = interviewRoleSchema.options;
 export const INTERVIEW_FREQUENCIES = interviewFrequencySchema.options;
 
-const englishTextSchema = z.object({ en: nonEmptyString });
-
 export const interviewSourceSchema = z.object({
   label: nonEmptyString,
   url: z.url()
 });
 
-export const interviewCodeBlockSchema = z.object({
-  language: nonEmptyString,
-  code: nonEmptyString,
-  caption: nonEmptyString
+// Curiosidad (ADR-0046): repregunta típica del entrevistador con su respuesta
+// corta, al final de la respuesta.
+export const interviewCuriositySchema = z.object({
+  question: localizedTextSchema,
+  answer: localizedTextSchema
 });
 
+// La respuesta es markdown real (párrafos, `###`, tablas, listas, links,
+// negritas) y puede incluir bloques de código cercados (fenced) en cualquier
+// posición. Convención de caption en el info string del fence:
+//
+//     ```js caption="Output: A, D, B, C"
+//     console.log('A');
+//     ```
+//
+// El caption (opcional) se muestra bajo el bloque; el lenguaje alimenta a
+// Shiki en el pre-render del build (`src/lib/interview-markdown.ts`).
 export const interviewQuestionSchema = z.object({
   id: nonEmptyString,
   area: nonEmptyString,
@@ -42,10 +62,9 @@ export const interviewQuestionSchema = z.object({
   level: interviewLevelSchema,
   roles: z.array(interviewRoleSchema).min(1),
   frequency: interviewFrequencySchema,
-  question: englishTextSchema,
-  answer: englishTextSchema,
-  codeBlocks: z.array(interviewCodeBlockSchema),
-  trickies: z.array(z.unknown()).length(0),
+  question: localizedTextSchema,
+  answer: localizedTextSchema,
+  curiosidades: z.array(interviewCuriositySchema),
   sources: z.array(interviewSourceSchema).min(1).max(3),
   tags: z.array(nonEmptyString).max(4)
 });
@@ -77,17 +96,6 @@ export const interviewQuestionBankSchema = z
     }
   });
 
-export const interviewTrickyItemSchema = z.object({
-  question: nonEmptyString,
-  answer: nonEmptyString,
-  trap: nonEmptyString
-});
-
-export const interviewTrickyGroupSchema = z.object({
-  id: nonEmptyString,
-  items: z.array(interviewTrickyItemSchema).min(1).max(2)
-});
-
 export const interviewMcqSchema = z.object({
   id: nonEmptyString,
   question: nonEmptyString,
@@ -107,13 +115,14 @@ export const interviewScenarioSchema = z.object({
   rubric: z.array(nonEmptyString).min(3).max(5)
 });
 
-export const interviewTrickyQuizSchema = z.object({
-  area: nonEmptyString,
-  generatedAt: nonEmptyString,
-  trickies: z.array(interviewTrickyGroupSchema),
+// El quiz por área vive en `<area>.quiz.json`: el archivo es solo
+// `quiz: { mcqs, scenarios }` y el área sale del nombre del archivo (ADR-0046). Las formas de mcq y scenario no cambian; los pisos del
+// conteo por archivo bajan a 1 porque el reparto por afinidad temática entre
+// áreas hijas deja quizzes menores que el cap histórico de 10-12 / 3-4.
+export const interviewQuizFileSchema = z.object({
   quiz: z.object({
-    mcqs: z.array(interviewMcqSchema).min(10).max(12),
-    scenarios: z.array(interviewScenarioSchema).min(3).max(4)
+    mcqs: z.array(interviewMcqSchema).min(1).max(12),
+    scenarios: z.array(interviewScenarioSchema).min(1).max(4)
   })
 });
 
@@ -150,7 +159,7 @@ export const interviewUiStateSchema = z.object({
     roles: z.array(interviewRoleSchema),
     frequencies: z.array(interviewFrequencySchema),
     search: z.string().max(2000),
-    onlyTricky: z.boolean(),
+    onlyCuriosidades: z.boolean(),
     onlyCode: z.boolean()
   }),
   sort: interviewSortSchema,
@@ -159,18 +168,18 @@ export const interviewUiStateSchema = z.object({
   onlyReview: z.boolean()
 });
 
+export type LocalizedText = z.infer<typeof localizedTextSchema>;
+export type InterviewLanguage = z.infer<typeof interviewLanguageSchema>;
 export type InterviewLevel = z.infer<typeof interviewLevelSchema>;
 export type InterviewRole = z.infer<typeof interviewRoleSchema>;
 export type InterviewFrequency = z.infer<typeof interviewFrequencySchema>;
 export type InterviewSource = z.infer<typeof interviewSourceSchema>;
-export type InterviewCodeBlock = z.infer<typeof interviewCodeBlockSchema>;
+export type InterviewCuriosity = z.infer<typeof interviewCuriositySchema>;
 export type InterviewQuestion = z.infer<typeof interviewQuestionSchema>;
 export type InterviewQuestionBank = z.infer<typeof interviewQuestionBankSchema>;
-export type InterviewTrickyItem = z.infer<typeof interviewTrickyItemSchema>;
-export type InterviewTrickyGroup = z.infer<typeof interviewTrickyGroupSchema>;
 export type InterviewMcq = z.infer<typeof interviewMcqSchema>;
 export type InterviewScenario = z.infer<typeof interviewScenarioSchema>;
-export type InterviewTrickyQuiz = z.infer<typeof interviewTrickyQuizSchema>;
+export type InterviewQuizFile = z.infer<typeof interviewQuizFileSchema>;
 export type InterviewProgressStatus = z.infer<typeof interviewProgressStatusSchema>;
 export type InterviewProgressEntry = z.infer<typeof interviewProgressEntrySchema>;
 export type InterviewProgress = z.infer<typeof interviewProgressSchema>;

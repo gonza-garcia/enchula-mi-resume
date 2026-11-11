@@ -1,5 +1,6 @@
 import type {
   InterviewFrequency,
+  InterviewLanguage,
   InterviewLevel,
   InterviewProgress,
   InterviewProgressEntry,
@@ -7,8 +8,8 @@ import type {
   InterviewQuestion,
   InterviewRole,
   InterviewSort,
-  InterviewTrickyItem,
-  InterviewUiState
+  InterviewUiState,
+  LocalizedText
 } from '../schemas/interview-questions';
 import { interviewProgressSchema, interviewUiStateSchema } from '../schemas/interview-questions';
 import { PROGRESS_STORAGE_KEY, UI_STATE_STORAGE_KEY } from '../scripts/storage-keys';
@@ -64,16 +65,35 @@ export function loadInterviewUiState(
 
 export type { InterviewSort, InterviewUiState };
 
-export interface RenderedCodeBlock {
+// Vista de la isla: el markdown de cada idioma viene pre-renderizado del build
+// (Shiki + marked, ver `src/lib/interview-markdown.ts`) y la isla solo aplica el
+// fallback de idioma al renderizar.
+export interface RenderedCodeShell {
   language: string;
-  code: string;
   caption: string;
+  lines: number;
   html: string;
 }
 
-export interface InterviewQuestionView extends Omit<InterviewQuestion, 'codeBlocks'> {
-  codeBlocks: RenderedCodeBlock[];
-  trickies: InterviewTrickyItem[];
+export interface RenderedLocalizedHtml {
+  en: string;
+  es: string;
+}
+
+export interface RenderedCuriosityView {
+  question: RenderedLocalizedHtml;
+  answer: RenderedLocalizedHtml;
+}
+
+export interface InterviewQuestionRendered {
+  question: RenderedLocalizedHtml;
+  answer: RenderedLocalizedHtml;
+  curiosidades: RenderedCuriosityView[];
+}
+
+export interface InterviewQuestionView extends InterviewQuestion {
+  rendered: InterviewQuestionRendered;
+  hasCode: boolean;
 }
 
 export interface InterviewFilters {
@@ -82,8 +102,15 @@ export interface InterviewFilters {
   roles: InterviewRole[];
   frequencies: InterviewFrequency[];
   search: string;
-  onlyTricky: boolean;
+  onlyCuriosidades: boolean;
   onlyCode: boolean;
+}
+
+// Fallback de idioma campo por campo (ADR-0046): si el idioma activo está
+// vacío, se usa el otro. Aplica a pregunta, respuesta (y con ella los captions
+// de sus fences) y curiosidades.
+export function localizedText(text: LocalizedText | RenderedLocalizedHtml, lang: InterviewLanguage): string {
+  return text[lang].trim() !== '' ? text[lang] : text[lang === 'en' ? 'es' : 'en'];
 }
 
 export const LEVEL_ORDER: Record<InterviewLevel, number> = {
@@ -179,10 +206,17 @@ function searchText(question: InterviewQuestionView, areaLabel: string): string 
       areaLabel,
       question.topic,
       question.question.en,
+      question.question.es,
       question.answer.en,
+      question.answer.es,
       ...question.roles,
       ...question.tags,
-      ...question.trickies.flatMap((tricky) => [tricky.question, tricky.answer, tricky.trap])
+      ...question.curiosidades.flatMap((curiosity) => [
+        curiosity.question.en,
+        curiosity.question.es,
+        curiosity.answer.en,
+        curiosity.answer.es
+      ])
     ].join(' ')
   );
 }
@@ -216,11 +250,13 @@ export function searchQuestionsByRank(
   const groups: InterviewSearchGroups = { area: [], title: [], answer: [] };
   if (needle.length === 0) return groups;
   for (const question of questions) {
+    const title = normalize(`${question.question.en} ${question.question.es}`);
+    const answer = normalize(`${question.answer.en} ${question.answer.es}`);
     const level: InterviewSearchLevel | null = normalize(areaLabel(question.area, areaLabels)).includes(needle)
       ? 'area'
-      : normalize(question.question.en).includes(needle)
+      : title.includes(needle)
         ? 'title'
-        : normalize(question.answer.en).includes(needle)
+        : answer.includes(needle)
           ? 'answer'
           : null;
     if (level) groups[level].push({ question, level });
@@ -252,8 +288,8 @@ export function filterAndSortQuestions(
     const matchesLevel = filters.levels.includes(question.level);
     const matchesRole = filters.roles.some((role) => question.roles.includes(role));
     const matchesFrequency = filters.frequencies.includes(question.frequency);
-    const matchesTricky = !filters.onlyTricky || question.trickies.length > 0;
-    const matchesCode = !filters.onlyCode || question.codeBlocks.length > 0;
+    const matchesCuriosidades = !filters.onlyCuriosidades || question.curiosidades.length > 0;
+    const matchesCode = !filters.onlyCode || question.hasCode;
     const matchesSearch =
       query.length === 0 ||
       searchText(question, areaLabel(question.area, areaLabels)).includes(query);
@@ -263,7 +299,7 @@ export function filterAndSortQuestions(
       matchesLevel &&
       matchesRole &&
       matchesFrequency &&
-      matchesTricky &&
+      matchesCuriosidades &&
       matchesCode &&
       matchesSearch
     );

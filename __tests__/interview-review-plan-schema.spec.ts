@@ -38,7 +38,7 @@ function bankQuestionIds(): Set<string> {
   const dir = path.resolve('src', 'content', 'interview-questions');
   const ids = new Set<string>();
   for (const entry of fs.readdirSync(dir)) {
-    if (!entry.endsWith('.json') || entry.endsWith('.tricky-quiz.json')) continue;
+    if (!entry.endsWith('.json') || entry.endsWith('.quiz.json')) continue;
     const bank = JSON.parse(fs.readFileSync(path.join(dir, entry), 'utf8'));
     for (const question of bank.questions) ids.add(question.id);
   }

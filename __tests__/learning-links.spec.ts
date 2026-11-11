@@ -34,7 +34,9 @@ test.describe('Enlaces entre /learning y /interview', () => {
 
   test('las areas sin fase del plan quedan sin enlace', async ({ page }) => {
     await page.goto('/interview/');
-    const item = page.locator('.quiz-area-item').filter({ hasText: 'React y frameworks UI' });
+    const item = page
+      .locator('.quiz-area-item')
+      .filter({ has: page.locator('.quiz-area-button', { hasText: 'DSA frontend' }) });
     await expect(item.locator('.quiz-area-plan')).toHaveCount(0);
     await expect(page.locator('.quiz-area-plan')).toHaveCount(5);
   });

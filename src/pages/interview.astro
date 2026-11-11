@@ -1,5 +1,4 @@
 ---
-import { codeToHtml } from 'shiki';
 import '../styles/ui.css';
 import Layout from '../layouts/Layout.astro';
 import SiteNav from '../components/SiteNav.astro';
@@ -7,13 +6,17 @@ import InterviewPrep from '../islands/interview-prep/InterviewPrep';
 import { loadProfile, nameInitials } from '../lib/profile';
 import { loadLearningPlan } from '../lib/learning-plan';
 import { assertReviewPlanQuestionIds, loadReviewPlans } from '../lib/interview-review-plan';
+import { renderAnswerMarkdown, renderCodeShell, renderInlineMarkdown } from '../lib/interview-markdown';
 import {
   interviewQuestionBankSchema,
-  interviewTrickyQuizSchema,
-  type InterviewCodeBlock,
+  interviewQuizFileSchema,
   type InterviewQuestionBank,
-  type InterviewTrickyQuiz
+  type InterviewQuizFile
 } from '../schemas/interview-questions';
+import type {
+  InterviewQuestionView,
+  RenderedCuriosityView
+} from '../lib/interview-prep';
 
 const { profile } = loadProfile();
 const { plan: learningPlan } = loadLearningPlan();
@@ -39,39 +42,51 @@ const modules = import.meta.glob('../content/interview-questions/*.json', {
 });
 
 const parsedBanks: InterviewQuestionBank[] = [];
-const parsedQuizzes: InterviewTrickyQuiz[] = [];
+const quizFiles: { area: string; quiz: InterviewQuizFile }[] = [];
 
 for (const [file, value] of Object.entries(modules)) {
-  if (file.endsWith('.tricky-quiz.json')) {
-    parsedQuizzes.push(interviewTrickyQuizSchema.parse(value));
+  if (file.endsWith('.quiz.json')) {
+    const area = file.split('/').pop()!.replace(/\.quiz\.json$/, '');
+    quizFiles.push({ area, quiz: interviewQuizFileSchema.parse(value) });
   } else {
     parsedBanks.push(interviewQuestionBankSchema.parse(value));
   }
 }
+quizFiles.sort((left, right) => left.area.localeCompare(right.area));
 
-if (parsedBanks.length !== 24 || parsedQuizzes.length !== 24) {
-  throw new Error(`Interview content expected 24 banks and 24 quiz files, received ${parsedBanks.length} and ${parsedQuizzes.length}.`);
+if (parsedBanks.length !== 34 || quizFiles.length !== 34) {
+  throw new Error(`Interview content expected 34 banks and 34 quiz files, received ${parsedBanks.length} and ${quizFiles.length}.`);
 }
 
 const AREA_LABELS: Record<string, string> = {
-  'javascript-typescript': 'JavaScript y TypeScript',
-  'html-css-accessibility': 'HTML, CSS y accesibilidad',
+  javascript: 'JavaScript',
+  typescript: 'TypeScript',
+  html: 'HTML',
+  css: 'CSS',
+  accesibilidad: 'Accesibilidad',
+  react: 'React',
+  'frameworks-ssr': 'Frameworks y SSR',
+  seguridad: 'Seguridad',
+  auth: 'Autenticación',
+  backend: 'Backend',
+  'bases-de-datos': 'Bases de datos',
+  'mobile-web': 'Mobile web',
+  'react-native': 'React Native',
+  'http-y-tiempo-real': 'HTTP y tiempo real',
+  'diseno-de-apis': 'Diseño de APIs',
+  git: 'Git',
+  'ci-cd-y-cloud': 'CI/CD y cloud',
+  'estado-en-la-ui': 'Estado en la UI',
+  'data-fetching': 'Data fetching',
   'browser-web-apis': 'Navegador y Web APIs',
   'web-performance': 'Performance web',
-  'mobile-cross-platform': 'Mobile y cross-platform',
-  'react-frameworks-ui': 'React y frameworks UI',
-  'state-data-fetching': 'Estado y data fetching',
   'styling-design-systems': 'Estilos y design systems',
   'ui-components-machine-coding': 'Componentes UI y machine coding',
-  'networking-apis': 'Redes y APIs',
-  'backend-data': 'Backend y datos',
   'testing-quality': 'Testing y calidad',
-  'security-auth': 'Seguridad y auth',
   observability: 'Observabilidad',
   'architecture-build': 'Arquitectura frontend y build',
   'system-design-frontend': 'System design frontend',
   'dsa-frontend': 'DSA frontend',
-  'git-cicd-cloud': 'Git, CI/CD y cloud',
   'python-backend-cloud': 'Python, backend y cloud',
   'llm-fundamentals': 'LLM y prompting',
   'rag-retrieval': 'RAG y retrieval',
@@ -80,14 +95,18 @@ const AREA_LABELS: Record<string, string> = {
   'behavioral-career': 'Behavioral y carrera'
 };
 
+// Los grupos conservan el área madre de cada split; los dos grupos que quedaban
+// con 6 áreas se reparten por criterio (ADR-0046). Los grupos de AI no se tocan.
 const AREA_GROUPS = [
-  { label: 'Lenguaje y resolución', areas: ['javascript-typescript', 'dsa-frontend'] },
-  { label: 'Plataforma web', areas: ['html-css-accessibility', 'browser-web-apis'] },
-  { label: 'UI y producto', areas: ['react-frameworks-ui', 'styling-design-systems', 'ui-components-machine-coding'] },
-  { label: 'Performance y dispositivos', areas: ['web-performance', 'mobile-cross-platform'] },
+  { label: 'Lenguaje y resolución', areas: ['javascript', 'typescript', 'dsa-frontend'] },
+  { label: 'Plataforma web', areas: ['html', 'css', 'accesibilidad', 'browser-web-apis'] },
+  { label: 'UI y producto', areas: ['react', 'frameworks-ssr', 'styling-design-systems', 'ui-components-machine-coding'] },
+  { label: 'Performance y dispositivos', areas: ['web-performance', 'mobile-web', 'react-native'] },
   { label: 'Arquitectura', areas: ['architecture-build', 'system-design-frontend'] },
-  { label: 'Datos y APIs', areas: ['state-data-fetching', 'networking-apis', 'backend-data'] },
-  { label: 'Entrega, calidad y confianza', areas: ['git-cicd-cloud', 'testing-quality', 'security-auth', 'observability'] },
+  { label: 'Estado y datos', areas: ['estado-en-la-ui', 'data-fetching', 'bases-de-datos'] },
+  { label: 'APIs y backend', areas: ['http-y-tiempo-real', 'diseno-de-apis', 'backend'] },
+  { label: 'Entrega y cloud', areas: ['git', 'ci-cd-y-cloud'] },
+  { label: 'Calidad, seguridad y confianza', areas: ['testing-quality', 'seguridad', 'auth', 'observability'] },
   { label: 'Carrera y futuro', areas: ['behavioral-career'] },
   {
     label: 'AI engineering (por fases del plan)',
@@ -101,76 +120,59 @@ const AREA_GROUPS = [
   }
 ];
 
-const trickyByArea = new Map(parsedQuizzes.map((quiz) => [quiz.area, quiz]));
-const highlightedHtmlCache = new Map<string, string>();
-
 const bankQuestionIds = new Set(parsedBanks.flatMap((bank) => bank.questions.map((question) => question.id)));
-for (const quiz of parsedQuizzes) {
-  for (const group of quiz.trickies) {
-    if (!bankQuestionIds.has(group.id)) {
-      throw new Error(`Tricky group "${group.id}" of ${quiz.area} does not match any bank question.`);
-    }
+
+// Validación cruzada de áreas: cada quiz vive en `<area>.quiz.json` y su área
+// tiene banco (y al revés). Antes el check era de los follow-ups contra el banco.
+const bankAreas = new Set(parsedBanks.map((bank) => bank.area));
+for (const { area } of quizFiles) {
+  if (!bankAreas.has(area)) {
+    throw new Error(`Quiz file ${area}.quiz.json does not match any bank area.`);
+  }
+}
+for (const bank of parsedBanks) {
+  if (!quizFiles.some((file) => file.area === bank.area)) {
+    throw new Error(`Bank ${bank.area}.json has no matching ${bank.area}.quiz.json.`);
   }
 }
 
 // Planes de repaso por oferta (ADR-0035): se validan en build contra el banco.
 assertReviewPlanQuestionIds(loadReviewPlans(), bankQuestionIds);
 
-const SHIKI_LANGUAGE_ALIASES: Record<string, string> = {
-  ts: 'typescript',
-  tsx: 'tsx',
-  js: 'javascript',
-  jsx: 'jsx',
-  text: 'text'
-};
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
+function hasFences(markdown: string): boolean {
+  return markdown.includes('```');
 }
 
-async function highlight(code: string, language: string): Promise<string> {
-  const key = `${language}\u0000${code}`;
-  const cached = highlightedHtmlCache.get(key);
-  if (cached) return cached;
-
-  try {
-    const html = await codeToHtml(code, {
-      lang: SHIKI_LANGUAGE_ALIASES[language] ?? language,
-      theme: 'github-dark'
-    });
-    highlightedHtmlCache.set(key, html);
-    return html;
-  } catch {
-    const fallback = `<pre><code>${escapeHtml(code)}</code></pre>`;
-    highlightedHtmlCache.set(key, fallback);
-    return fallback;
-  }
-}
-
-async function renderCodeBlock(block: InterviewCodeBlock) {
-  return {
-    language: block.language,
-    code: block.code,
-    caption: block.caption,
-    html: await highlight(block.code, block.language)
-  };
-}
-
-const questions = (
+const questions: InterviewQuestionView[] = (
   await Promise.all(
     parsedBanks.flatMap((bank) =>
-      bank.questions.map(async (question) => {
-        const quiz = trickyByArea.get(bank.area);
-        const followUps = quiz?.trickies.find((group) => group.id === question.id)?.items ?? [];
+      bank.questions.map(async (question): Promise<InterviewQuestionView> => {
+        const curiosidades: RenderedCuriosityView[] = await Promise.all(
+          question.curiosidades.map(async (curiosity) => ({
+            question: {
+              en: await renderInlineMarkdown(curiosity.question.en),
+              es: curiosity.question.es ? await renderInlineMarkdown(curiosity.question.es) : ''
+            },
+            answer: {
+              en: await renderAnswerMarkdown(curiosity.answer.en),
+              es: curiosity.answer.es ? await renderAnswerMarkdown(curiosity.answer.es) : ''
+            }
+          }))
+        );
         return {
           ...question,
-          trickies: followUps,
-          codeBlocks: await Promise.all(question.codeBlocks.map((block) => renderCodeBlock(block)))
+          rendered: {
+            question: {
+              en: await renderInlineMarkdown(question.question.en),
+              es: question.question.es ? await renderInlineMarkdown(question.question.es) : ''
+            },
+            answer: {
+              en: await renderAnswerMarkdown(question.answer.en),
+              es: question.answer.es ? await renderAnswerMarkdown(question.answer.es) : ''
+            },
+            curiosidades
+          },
+          hasCode: hasFences(question.answer.en) || hasFences(question.answer.es)
         };
       })
     )
@@ -178,13 +180,16 @@ const questions = (
 ).sort((left, right) => left.id.localeCompare(right.id));
 
 const quizzes = await Promise.all(
-  parsedQuizzes.map(async (quiz) => ({
-    area: quiz.area,
+  quizFiles.map(async ({ area, quiz }) => ({
+    area,
     mcqs: quiz.quiz.mcqs,
     scenarios: await Promise.all(
       quiz.quiz.scenarios.map(async (scenario) => ({
-        ...scenario,
-        code: await renderCodeBlock({ ...scenario.code, caption: 'Código del escenario' })
+        id: scenario.id,
+        prompt: scenario.prompt,
+        rubric: scenario.rubric,
+        code: await renderCodeShell(scenario.code.language, 'Código del escenario', scenario.code.code),
+        modelAnswerHtml: await renderAnswerMarkdown(scenario.modelAnswer)
       }))
     )
   }))
@@ -292,7 +297,23 @@ const sources = Array.from(
       display: flex;
     }
 
-    .interview-brand-row { gap: 12px; }
+    .interview-brand-row { gap: 12px; justify-content: space-between; }
+    /* Toggle de idioma del contenido (EN/ES, ADR-0046): vive en el header y se
+       persiste en `interview-lang`; los textos de UI siguen en español. */
+    .lang-toggle { display: inline-flex; gap: 4px; }
+    .lang-toggle button {
+      background: transparent;
+      border: 1px solid rgba(250, 248, 242, 0.35);
+      color: #b1b1aa;
+      cursor: pointer;
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      padding: 4px 8px;
+      text-transform: uppercase;
+    }
+    .lang-toggle button:hover { border-color: var(--iv-accent); color: var(--iv-accent); }
+    .lang-toggle button.active { background: var(--iv-accent); border-color: var(--iv-accent); color: var(--iv-ink); }
     .header-label {
       color: var(--iv-accent);
       font-size: 0.7rem;
@@ -656,8 +677,29 @@ const sources = Array.from(
     .answer-copy { color: #303238; font-size: 0.95rem; max-width: 920px; }
     .answer-copy p { margin-bottom: 10px; }
     .answer-copy p:last-child { margin-bottom: 0; }
-    .answer-copy ul { margin: 0 0 10px; padding-left: 20px; }
+    .answer-copy ul,
+    .answer-copy ol { margin: 0 0 10px; padding-left: 20px; }
     .answer-copy li { margin-bottom: 5px; }
+    .answer-copy h3 {
+      font-size: 1.02rem;
+      letter-spacing: -0.02em;
+      margin: 18px 0 8px;
+    }
+    .answer-copy a { color: var(--iv-blue); text-underline-offset: 2px; }
+    .answer-copy table {
+      border-collapse: collapse;
+      font-size: 0.86rem;
+      margin: 4px 0 14px;
+      width: 100%;
+    }
+    .answer-copy th,
+    .answer-copy td {
+      border: 1px solid var(--iv-line);
+      padding: 7px 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .answer-copy th { background: #f2eee5; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; }
     .answer-copy code {
       background: #ebe7de;
       border-radius: 2px;
@@ -666,7 +708,19 @@ const sources = Array.from(
       font-size: 0.85em;
       padding: 2px 4px;
     }
+    .detail-panel h2 code,
+    .card-question code,
+    .curiosity-item h3 code {
+      background: #ebe7de;
+      border-radius: 2px;
+      color: #323b75;
+      font-family: 'SF Mono', Consolas, monospace;
+      font-size: 0.85em;
+      padding: 1px 4px;
+    }
 
+    /* Shell de código (ADR-0046): header con lenguaje + «N líneas», gutter
+       numerado hermano del HTML de Shiki y caption bajo el bloque. */
     .interview-code { margin: 18px 0 0; }
     .code-label {
       background: #202329;
@@ -679,16 +733,43 @@ const sources = Array.from(
     }
     .code-label span:first-child { color: var(--iv-accent); text-transform: uppercase; }
     .code-label span:last-child { color: #aaaeb4; font-family: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .code-output { overflow-x: auto; }
+    .code-shell { background: #24292e; display: flex; overflow: hidden; }
+    .code-gutter {
+      border-radius: 0 !important;
+      color: #6b727c;
+      flex: none;
+      font-family: 'SF Mono', Consolas, monospace;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      margin: 0 !important;
+      padding: 14px 9px 14px 12px !important;
+      text-align: right;
+      user-select: none;
+    }
+    .code-output { flex: 1; min-width: 0; overflow-x: auto; }
     .code-output pre {
       border-radius: 0 !important;
+      font-family: 'SF Mono', Consolas, monospace;
+      font-size: 0.82rem;
+      line-height: 1.55;
       margin: 0 !important;
       min-width: 100%;
       padding: 14px !important;
     }
-    .code-output code { background: transparent; color: inherit; padding: 0; }
+    .code-output code {
+      background: transparent;
+      color: inherit;
+      font-family: inherit;
+      font-size: inherit;
+      padding: 0;
+    }
+    .code-caption {
+      color: var(--iv-muted);
+      font-size: 0.76rem;
+      margin-top: 6px;
+    }
 
-    .tricky-list { border-top: 1px solid var(--iv-soft-line); margin-top: 24px; padding-top: 18px; }
+    .curiosity-list { border-top: 1px solid var(--iv-soft-line); margin-top: 24px; padding-top: 18px; }
     .section-kicker {
       align-items: center;
       color: var(--iv-muted);
@@ -701,7 +782,7 @@ const sources = Array.from(
       text-transform: uppercase;
     }
     .section-dot { background: var(--iv-blue); border-radius: 50%; height: 7px; width: 7px; }
-    /* Trigger de las secciones contraídas (Preguntas trampa / Mis notas). */
+    /* Trigger de las secciones contraídas (Mis notas). */
     .section-trigger {
       background: none;
       border: 0;
@@ -752,15 +833,14 @@ const sources = Array.from(
       color: var(--iv-blue);
       outline: none;
     }
-    .tricky-item {
+    .curiosity-item {
       background: #f5f0e7;
       border-left: 2px solid var(--iv-blue);
       margin-top: 8px;
       padding: 12px 14px;
     }
-    .tricky-item h3 { font-size: 0.9rem; letter-spacing: -0.02em; }
-    .tricky-item p { color: #41434a; font-size: 0.84rem; margin-top: 7px !important; }
-    .tricky-item .trap-note { color: #67616b; }
+    .curiosity-item h3 { font-size: 0.9rem; letter-spacing: -0.02em; }
+    .curiosity-item p { color: #41434a; font-size: 0.84rem; margin-top: 7px !important; }
     .detail-bottom {
       align-items: flex-start;
       border-top: 1px solid var(--iv-soft-line);

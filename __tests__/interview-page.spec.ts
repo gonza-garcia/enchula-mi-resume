@@ -79,7 +79,7 @@ test.describe('Interview prep page /interview/', () => {
     await expect(firstCard.locator('.level-pill')).toContainText('Architect');
 
     await page.getByRole('combobox', { name: 'Ordenar' }).selectOption('area');
-    await expect(firstCard.locator('.card-area')).toContainText('Agentes y MCP');
+    await expect(firstCard.locator('.card-area')).toContainText('Accesibilidad');
 
     await page.getByRole('combobox', { name: 'Ordenar' }).selectOption('frequency');
     await expect(firstCard.locator('.level-pill')).toContainText('Junior');
@@ -109,25 +109,29 @@ test.describe('Interview prep page /interview/', () => {
     await expect(page.locator('.sources-grid a').first()).toBeVisible();
   });
 
-  test('supports tricky and code toggles', async ({ page }) => {
+  test('supports curiosidades and code toggles', async ({ page }) => {
     await page.goto('/interview/');
     await waitHydrated(page);
     const total = await page.locator('.question-card').count();
-    await page.getByRole('checkbox', { name: 'Solo tricky' }).check();
-    const trickyCount = await page.locator('.question-card').count();
-    expect(trickyCount).toBeGreaterThan(0);
-    expect(trickyCount).toBeLessThan(total);
+    await page.getByRole('checkbox', { name: 'Con curiosidades' }).check();
+    const curiosityCount = await page.locator('.question-card').count();
+    expect(curiosityCount).toBeGreaterThan(0);
+    expect(curiosityCount).toBeLessThan(total);
 
     await page.getByRole('checkbox', { name: 'Tiene código' }).check();
     const codeCount = await page.locator('.question-card').count();
     expect(codeCount).toBeGreaterThan(0);
-    expect(codeCount).toBeLessThanOrEqual(trickyCount);
+    expect(codeCount).toBeLessThanOrEqual(curiosityCount);
   });
 
   test('opens an area quiz and an accessible code scenario', async ({ page }) => {
     await page.goto('/interview/');
     await waitHydrated(page);
-    await page.locator('.quiz-area-button').first().dispatchEvent('click');
+    await page
+      .locator('.quiz-area-item')
+      .filter({ hasText: 'Agentes y MCP' })
+      .locator('.quiz-area-button')
+      .dispatchEvent('click');
     await expect(page.locator('.quiz-panel')).toBeVisible();
     const mcqCount = await page.locator('.mcq').count();
     expect(mcqCount).toBeGreaterThanOrEqual(10);
@@ -136,6 +140,30 @@ test.describe('Interview prep page /interview/', () => {
     await expect(page.locator('.mcq-feedback').first()).toBeVisible();
     await page.locator('.scenario').first().locator('summary').dispatchEvent('click');
     await expect(page.locator('.scenario-answer').first()).toBeVisible();
+    // Shell de código accesible (ADR-0046): grupo con aria-label, gutter y pre
+    // enfocable para scroll con teclado.
+    const shell = page.locator('.scenario .code-shell').first();
+    await expect(shell).toHaveAttribute('role', 'group');
+    await expect(shell.locator('.code-gutter')).toHaveAttribute('aria-hidden', 'true');
+    await expect(shell.locator('pre[tabindex="0"]').first()).toBeVisible();
+  });
+
+  test('switches the content language to Spanish and persists it', async ({ page }) => {
+    await page.goto('/interview/');
+    await waitHydrated(page);
+    await page.getByRole('searchbox', { name: 'Filtro de preguntas' }).fill('event-loop-model');
+    await expect(page.locator('.question-card')).toHaveCount(1);
+    await page.locator('.question-card').first().dispatchEvent('click');
+    await expect(page.locator('.detail-panel h2')).toContainText('Explain the JavaScript event loop');
+    await expect(page.locator('.curiosity-item h3')).toContainText('setTimeout');
+
+    await page.getByRole('button', { name: 'ES', exact: true }).click();
+    await expect(page.locator('.detail-panel h2')).toContainText('Explicá el event loop');
+    await expect(page.locator('.curiosity-item h3')).toContainText('garantiza');
+
+    await page.reload();
+    await waitHydrated(page);
+    await expect(page.locator('.detail-panel h2')).toContainText('Explicá el event loop');
   });
 
   test('persists the selected level color style independently', async ({ page }) => {
@@ -182,7 +210,7 @@ test.describe('Interview prep page /interview/', () => {
             roles: ['frontend', 'backend', 'fullstack'],
             frequencies: ['muy-preguntada', 'clave-menos-frecuente', 'clave-muy-poco-frecuente'],
             search: '',
-            onlyTricky: false,
+            onlyCuriosidades: false,
             onlyCode: false
           },
           sort: 'frequency',

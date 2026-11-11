@@ -41,7 +41,7 @@ export function missingReviewPlanQuestionIds(
 /**
  * Validacion cruzada con el banco: todo questionId del plan tiene que existir.
  * Falla ruidosamente en build, nombrando el id y el plan (mismo criterio que el
- * check de tricky groups de /interview).
+ * check de areas de quiz de /interview).
  */
 export function assertReviewPlanQuestionIds(
   plans: InterviewReviewPlan[],
