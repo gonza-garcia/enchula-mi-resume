@@ -54,7 +54,7 @@
       "why": "La oferta pide \"raise the testing bar\" y tenés Vitest, RTL y Playwright en CI",
       "questionIds": [
         "testing-quality-test-pyramid",
-        "testing-quality-coverage-quality-gates",
+        "testing-quality-quality-gates-system",
         "testing-quality-playwright-isolation-waits",
         "testing-quality-rtl-user-behavior"
       ]

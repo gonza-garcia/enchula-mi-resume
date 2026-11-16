@@ -35,7 +35,7 @@
       "questionIds": [
         "testing-quality-rtl-user-behavior",
         "testing-quality-rtl-query-choice",
-        "testing-quality-coverage-quality-gates",
+        "testing-quality-quality-gates-system",
         "testing-quality-debug-flaky-tests"
       ]
     },
