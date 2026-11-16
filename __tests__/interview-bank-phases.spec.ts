@@ -85,7 +85,7 @@ const EXPECTED_COUNTS: Record<string, number> = {
   'diseno-de-apis': 10,
   git: 3,
   'ci-cd-y-cloud': 9,
-  'estado-en-la-ui': 16,
+  'estado-en-la-ui': 18,
   'data-fetching': 10
 };
 
