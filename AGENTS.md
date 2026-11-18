@@ -201,7 +201,8 @@ lo define la instancia.
 - El modelo no lee PDFs adjuntos: extraer texto con pypdf (`python` con `pypdf` instalado).
 - Puertos excluidos de Windows: los rangos reservados de Hyper-V (`netsh interface ipv4 show
   excludedportrange protocol=tcp`) hacen fallar binds con EACCES. Si un server o la suite no
-  arranca con EACCES, mover el puerto fuera de los rangos reportados (la suite usa 4631 y 4633, y ojo: Astro 7 permite UN dev daemon por proyecto - si el
-  usuario tiene su `pnpm run dev` abierto (4321), la suite no arranca; cerrarlo antes con
-  `pnpm exec astro dev stop` (con su OK),
-  ver `playwright.config.ts`; el dev y preview manuales quedan en 4321 y 4322).
+  arranca con EACCES, mover el puerto fuera de los rangos reportados (la suite usa 4733,
+  movida el 18 nov 2026 cuando el rango 4605-4704 de Hyper-V se tragó el 4633, ver
+  `playwright.config.ts`; el dev y preview manuales quedan en 4321 y 4322). Ojo: Astro 7
+  permite UN dev daemon por proyecto - si el usuario tiene su `pnpm run dev` abierto (4321),
+  la suite no arranca; cerrarlo antes con `pnpm exec astro dev stop` (con su OK).

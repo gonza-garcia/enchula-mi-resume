@@ -15,7 +15,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:4633' }
+      use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:4733' }
     }
   ],
   webServer: [
@@ -25,14 +25,14 @@ export default defineConfig({
       // en dist-e2e (E2E_DEMO=1, ver astro.config.mjs), sin tocar el dist/ del
       // perfil real.
       //
-      // Puertos propios de la suite (4633): no reutiliza un dev o preview
+      // Puertos propios de la suite (4733): no reutiliza un dev o preview
       // manual del usuario (4321 y 4322), evita la UI del harness de agentes
       // (OpenCode / T3 Code sirve su UI en 4523) y queda fuera de los rangos de
       // puertos excluidos de Windows (netsh interface ipv4 show excludedportrange).
       // Si un bind falla con EACCES o el puerto esta tomado, moverlo fuera de los
       // rangos reportados.
-      command: 'pnpm run build && pnpm exec astro preview --port 4633',
-      url: 'http://localhost:4633',
+      command: 'pnpm run build && pnpm exec astro preview --port 4733',
+      url: 'http://localhost:4733',
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
       // Astro 7 auto-daemoniza dev/preview cuando detecta un agente de IA:

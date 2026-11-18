@@ -80,11 +80,11 @@ const EXPECTED_COUNTS: Record<string, number> = {
   backend: 7,
   'bases-de-datos': 12,
   'mobile-web': 5,
-  'react-native': 5,
+  'react-native': 6,
   'http-y-tiempo-real': 7,
   'diseno-de-apis': 11,
   git: 3,
-  'ci-cd-y-cloud': 9,
+  'ci-cd-y-cloud': 10,
   'estado-en-la-ui': 18,
   'data-fetching': 10
 };
