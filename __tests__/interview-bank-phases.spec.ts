@@ -188,15 +188,15 @@ test.describe('Banco reorganizado por fases del plan (ADR-0030) y taxonomía 34 
   });
 
   test('los temas prioritarios de la reevaluacion estan cubiertos por preguntas nuevas', () => {
-    const texts = PLAN_PHASE_AREAS.flatMap((area) =>
-      (loadBank(`${area}.json`)?.questions ?? []).map(
-        (question) => `${question.id} ${question.question.en}`
-      )
-    ).join('\n');
-    expect(texts).toContain('error analysis');
-    expect(texts).toContain('NOT use RAG');
-    expect(texts).toContain('token cost and latency');
-    expect(texts).toContain('exfiltrating data');
-    expect(texts).toContain('AI coding agents');
+    const ids = PLAN_PHASE_AREAS.flatMap((area) =>
+      (loadBank(`${area}.json`)?.questions ?? []).map((question) => question.id)
+    );
+    // Cobertura por id (estables por ADR-0030): los textos cambian con las
+    // reescrituras de la Fase I, los ids no.
+    expect(ids).toContain('evals-production-error-analysis-100-traces');
+    expect(ids).toContain('rag-retrieval-when-not-to-use-rag');
+    expect(ids).toContain('llm-fundamentals-cost-and-latency-reasoning');
+    expect(ids).toContain('agents-mcp-tool-safety-and-exfiltration');
+    expect(ids).toContain('agents-mcp-programming-with-agents');
   });
 });
