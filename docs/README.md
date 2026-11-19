@@ -786,3 +786,12 @@ contexto y no contradecir las decisiones vigentes de este README.
   taxonomía pasa de 24 a 34 áreas con los 9 splits aprobados por `topic`; los ids de pregunta
   no cambian (prefijo histórico) y progreso y planes de repaso siguen válidos. Migración
   mecánica de formato: las respuestas se reescriben en la F3.
+- 19 nov 2026: **Fase I cerrada**. Las 393 preguntas del banco quedan reescritas EN+ES con
+  el criterio didáctico (respuesta que contesta primero, herramienta según la dificultad,
+  conceptos definidos inline, código en el flujo, sección «Curiosidades»), material de
+  entrevistas técnicas reales incorporado como ejercicios tipo «mirá este código» (puzzles
+  de orden, bugs a encontrar, predicción de estado) y como preguntas nuevas (mutación e
+  inmutabilidad, Set/Map, decorators, componentes de clase, React Profiler, principios de
+  diseño). La skill `build-interview-review-plan` suma la regla de «práctica de sintaxis en
+  vivo» para los planes de repaso. Fixes: `FENCE_PATTERN` renderiza captions con backticks
+  (32 bloques afectados), y la coherencia del snippet del PKCE con sus pasos.
