@@ -821,3 +821,15 @@ contexto y no contradecir las decisiones vigentes de este README.
   nuevas), y deep link `?coleccion=<slug>` con la selección persistida en
   `interview-ui-state`. Viaja una colección genérica de ejemplo («Event loop y asincronía
   en JavaScript»). Verificación en verde: 357 tests.
+- 19 nov 2026 (Fase I, cierre de pendientes): **12 preguntas nuevas por huecos de
+  cobertura y pasada de metadatos**. El bloque de prioridad cubre los huecos señalados en
+  el triage: métodos de array y copia superficial/profunda en JavaScript, `satisfies` y
+  tipos literales con `as const` en TypeScript, «contame sobre vos», SLI/SLO y error
+  budgets, hashing de contraseñas, rotación de refresh tokens, migraciones de esquema sin
+  downtime (expand/contract) y dos ejercicios de CSS (sticky contra contenedores de scroll
+  y `height: 100%` en padre `auto`), cada pregunta con fuentes primarias verificadas y
+  sus curiosidades. Metadatos revisados en 6 preguntas (nivel de un diseño de autocomplete
+  y de un plan de medición en campo, frecuencia del diseño de presupuestos y retopic a
+  `queues` de la consistencia de punta a punta). Banco en **405 preguntas**. El resto del
+  inventario de sugerencias queda con gatillo en el planning. Verificación en verde: 357
+  tests.

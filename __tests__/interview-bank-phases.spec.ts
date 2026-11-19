@@ -68,17 +68,17 @@ const ALL_AREAS = [
 
 // Conteo por área tras el corte por topic de la taxonomía aprobada.
 const EXPECTED_COUNTS: Record<string, number> = {
-  javascript: 21,
-  typescript: 17,
+  javascript: 23,
+  typescript: 19,
   html: 7,
-  css: 6,
+  css: 8,
   accesibilidad: 8,
   react: 27,
   'frameworks-ssr': 11,
-  seguridad: 7,
-  auth: 8,
+  seguridad: 8,
+  auth: 9,
   backend: 7,
-  'bases-de-datos': 12,
+  'bases-de-datos': 13,
   'mobile-web': 5,
   'react-native': 6,
   'http-y-tiempo-real': 7,
