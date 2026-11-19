@@ -80,6 +80,7 @@ import {
   setItemStatus
 } from '../../lib/interview-review-state';
 import type { InterviewReviewPlan, InterviewReviewState } from '../../schemas/interview-review-plan';
+import type { InterviewCollection } from '../../schemas/interview-collection';
 import { INTERVIEW_LANG_STORAGE_KEY, LEVEL_STYLE_STORAGE_KEY } from '../../scripts/storage-keys';
 
 const LEVEL_STYLES = ['traffic', 'cool', 'neutral'] as const;
@@ -128,6 +129,7 @@ interface InterviewPrepProps {
   sources: SourceLink[];
   planLinks?: Record<string, PlanAreaLink>;
   reviewPlans?: InterviewReviewPlan[];
+  collections?: InterviewCollection[];
 }
 
 const ALL_LEVELS: InterviewLevel[] = [...INTERVIEW_LEVELS];
@@ -380,21 +382,29 @@ function FilterSidebar({
   areas,
   areaGroups,
   areaLabels,
+  collections,
+  activeCollectionSlug,
+  lang,
   levelStyle,
   onUpdate,
   onSetLevelStyle,
   onReset,
-  onOpenSearch
+  onOpenSearch,
+  onSelectCollection
 }: {
   filters: InterviewFilters;
   areas: string[];
   areaGroups: AreaGroup[];
   areaLabels: Record<string, string>;
+  collections: InterviewCollection[];
+  activeCollectionSlug: string | null;
+  lang: InterviewLanguage;
   levelStyle: LevelStyle;
   onUpdate: (updater: (current: InterviewFilters) => InterviewFilters) => void;
   onSetLevelStyle: (style: LevelStyle) => void;
   onReset: () => void;
   onOpenSearch: () => void;
+  onSelectCollection: (slug: string | null) => void;
 }) {
   const selectedAreaCount = filters.areas.length;
 
@@ -484,6 +494,34 @@ function FilterSidebar({
           })}
         </div>
       </fieldset>
+
+      {/* Colecciones de practica (Fase J): al elegir una, el listado se filtra a
+          sus ids y se muestra su panel de ejercicios. Otra vez la misma para
+          salir (o "Salir de la coleccion" en el panel). */}
+      {collections.length > 0 && (
+        <fieldset className="filter-group">
+          <legend>Colecciones</legend>
+          <div className="collection-list">
+            {collections.map((collection) => (
+              <button
+                key={collection.slug}
+                type="button"
+                className={
+                  activeCollectionSlug === collection.slug
+                    ? 'collection-choice active'
+                    : 'collection-choice'
+                }
+                aria-pressed={activeCollectionSlug === collection.slug}
+                onClick={() =>
+                  onSelectCollection(activeCollectionSlug === collection.slug ? null : collection.slug)
+                }
+              >
+                {localizedText(collection.title, lang)}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      )}
 
       <CheckboxGroup
         label="Nivel"
@@ -891,6 +929,101 @@ function ReviewPanel({
   );
 }
 
+// Coleccion de practica (Fase J): panel tipo ReviewPanel con los ejercicios y
+// sus notas, pero sin marcas propias — la practica usa el progreso por pregunta
+// existente (`interview-progress`: sin-marcar / se / repasar), que se muestra en
+// cada chip.
+function CollectionPanel({
+  collection,
+  progress,
+  questionsById,
+  lang,
+  onExit,
+  onGoToQuestion
+}: {
+  collection: InterviewCollection;
+  progress: InterviewProgress;
+  questionsById: Map<string, InterviewQuestionView>;
+  lang: InterviewLanguage;
+  onExit: () => void;
+  onGoToQuestion: (questionId: string) => void;
+}) {
+  const uniqueIds = Array.from(new Set(collection.items.flatMap((item) => item.questionIds)));
+  const advancedCount = (questionIds: string[]) =>
+    questionIds.filter((questionId) => {
+      const entry = questionProgress(progress, questionId);
+      return entry.status !== 'sin-marcar' || entry.note.trim() !== '';
+    }).length;
+
+  return (
+    <section
+      className="review-panel"
+      aria-label={`Colección ${localizedText(collection.title, lang)}`}
+    >
+      <div className="review-head">
+        <div>
+          <p className="eyebrow">Colección de práctica</p>
+          <h2>{localizedText(collection.title, lang)}</h2>
+          <p className="review-meta">
+            {collection.items.length} ejercicios · {uniqueIds.length} preguntas ·{' '}
+            {advancedCount(uniqueIds)}/{uniqueIds.length} con avance
+          </p>
+        </div>
+        <div className="review-head-actions">
+          <button type="button" className="review-exit" onClick={onExit}>
+            Salir de la colección
+          </button>
+        </div>
+      </div>
+      <ol className="review-items">
+        {collection.items.map((item, index) => (
+          <li key={item.id} className="review-item">
+            <div className="review-item-head">
+              <span className="review-item-order" aria-hidden="true">
+                {index + 1}
+              </span>
+              <div className="review-item-copy">
+                {item.note && <h3>{localizedText(item.note, lang)}</h3>}
+                <p className="collection-item-progress">
+                  {advancedCount(item.questionIds)}/{item.questionIds.length} con avance
+                </p>
+              </div>
+            </div>
+            <div className="review-question-chips">
+              {item.questionIds.map((questionId) => {
+                const target = questionsById.get(questionId);
+                const entry = questionProgress(progress, questionId);
+                return (
+                  <button
+                    key={questionId}
+                    type="button"
+                    className="review-chip collection-chip"
+                    title={
+                      target
+                        ? `${localizedText(target.question, lang)} — ${PROGRESS_STATUS_LABELS[entry.status]}`
+                        : questionId
+                    }
+                    onClick={() => onGoToQuestion(questionId)}
+                  >
+                    <span
+                      className="collection-chip-copy"
+                      dangerouslySetInnerHTML={{
+                        __html: target ? localizedText(target.rendered.question, lang) : questionId
+                      }}
+                    />
+                    <span className={`chip-status chip-status-${entry.status}`} aria-hidden="true" />
+                    <span className="sr-only">{`Estado: ${PROGRESS_STATUS_LABELS[entry.status]}`}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 export default function InterviewPrep({
   questions,
   quizzes,
@@ -898,7 +1031,8 @@ export default function InterviewPrep({
   areaGroups,
   sources,
   planLinks = {},
-  reviewPlans = []
+  reviewPlans = [],
+  collections = []
 }: InterviewPrepProps) {
   const areas = areaGroups.flatMap((group) => group.areas);
   // Estado de la vista persistido en localStorage: filtros, orden y selección se
@@ -929,6 +1063,11 @@ export default function InterviewPrep({
   );
   const [reviewDialogSlug, setReviewDialogSlug] = useState<string | null>(null);
   const [onlyReview, setOnlyReview] = useState(() => restoredUi?.onlyReview ?? false);
+  // Coleccion de practica activa (Fase J): se persiste con el resto de la vista
+  // y el deep link ?coleccion=<slug> la pide al montar.
+  const [collectionSlug, setCollectionSlug] = useState<string | null>(
+    () => restoredUi?.collectionSlug ?? null
+  );
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const deferredSearch = useDeferredValue(filters.search);
   const effectiveFilters = { ...filters, search: deferredSearch };
@@ -940,14 +1079,24 @@ export default function InterviewPrep({
     areaLabels
   );
   const activeReview = reviewPlans.find((plan) => plan.slug === reviewState.activeSlug) ?? null;
+  // El slug guardado puede quedar viejo (coleccion ya borrada): sin match no hay
+  // coleccion activa.
+  const activeCollection = collections.find((collection) => collection.slug === collectionSlug) ?? null;
   const questionsById = new Map(questions.map((question) => [question.id, question]));
   const reviewQuestionIds = new Set(
     activeReview ? activeReview.items.flatMap((item) => item.questionIds) : []
   );
-  const visibleQuestions =
+  const collectionQuestionIds = activeCollection
+    ? new Set(activeCollection.items.flatMap((item) => item.questionIds))
+    : null;
+  const reviewFilteredQuestions =
     onlyReview && activeReview
       ? baseVisibleQuestions.filter((question) => reviewQuestionIds.has(question.id))
       : baseVisibleQuestions;
+  // Coleccion activa: el listado se filtra siempre a sus ids (Fase J).
+  const visibleQuestions = collectionQuestionIds
+    ? reviewFilteredQuestions.filter((question) => collectionQuestionIds.has(question.id))
+    : reviewFilteredQuestions;
   const selected = questions.find((question) => question.id === selectedId) ?? visibleQuestions[0] ?? null;
   const selectedAreaLabel = selected ? areaLabel(selected.area, areaLabels) : '';
   const selectedQuiz = practiceArea ? quizzes.find((quiz) => quiz.area === practiceArea) ?? null : null;
@@ -1038,7 +1187,17 @@ export default function InterviewPrep({
     setRandomSeed(restored.randomSeed);
     setSelectedId(restored.selectedId);
     setOnlyReview(restored.onlyReview);
+    setCollectionSlug(restored.collectionSlug ?? null);
   }, []);
+
+  // Deep link ?coleccion=<slug> (Fase J): pide la coleccion al montar y pisa lo
+  // guardado. Corre DESPUES del restore de la vista para que gane la URL.
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get('coleccion');
+    if (!requested) return;
+    if (!collections.some((collection) => collection.slug === requested)) return;
+    setCollectionSlug(requested);
+  }, [collections]);
 
   useEffect(() => {
     saveProgress(interviewUiStateStore, {
@@ -1047,9 +1206,10 @@ export default function InterviewPrep({
       sort,
       randomSeed,
       selectedId,
-      onlyReview
+      onlyReview,
+      collectionSlug
     });
-  }, [filters, sort, randomSeed, selectedId, onlyReview]);
+  }, [filters, sort, randomSeed, selectedId, onlyReview, collectionSlug]);
 
   useEffect(() => {
     if (selected?.id !== selectedId) setSelectedId(selected?.id ?? null);
@@ -1124,6 +1284,10 @@ export default function InterviewPrep({
     );
   };
 
+  const selectCollection = (slug: string | null) => {
+    setCollectionSlug(slug);
+  };
+
   const updateQuestionProgress = (patch: Partial<InterviewProgressEntry>) => {
     if (!selected) return;
     setProgress((current) => setQuestionProgress(current, selected.id, patch));
@@ -1192,11 +1356,15 @@ export default function InterviewPrep({
           areas={areas}
           areaGroups={areaGroups}
           areaLabels={areaLabels}
+          collections={collections}
+          activeCollectionSlug={activeCollection?.slug ?? null}
+          lang={lang}
           levelStyle={levelStyle}
           onUpdate={setFilters}
           onSetLevelStyle={setLevelStyle}
           onReset={resetFilters}
           onOpenSearch={() => setSearchOpen(true)}
+          onSelectCollection={selectCollection}
         />
 
         <main className="interview-main" id="main-content">
@@ -1210,6 +1378,16 @@ export default function InterviewPrep({
               onToggleOnlyReview={() => setOnlyReview((value) => !value)}
               onToggleMark={toggleReviewMark}
               onExit={exitReview}
+              onGoToQuestion={goToQuestion}
+            />
+          )}
+          {activeCollection && (
+            <CollectionPanel
+              collection={activeCollection}
+              progress={progress}
+              questionsById={questionsById}
+              lang={lang}
+              onExit={() => selectCollection(null)}
               onGoToQuestion={goToQuestion}
             />
           )}

@@ -74,8 +74,8 @@ _Avoid_: gestor de ofertas, offers manager
 
 **Isla de interview prep**:
 Componente React hidratado en /interview que administra filtros, búsqueda, orden,
-detalle de pregunta, quizzes y escenarios del banco. No interviene en el CV
-principal ni en `/ofertas`.
+detalle de pregunta, quizzes, escenarios del banco y colecciones de práctica. No
+interviene en el CV principal ni en `/ofertas`.
 _Avoid_: study app, app de preguntas
 
 **build-profile**:
@@ -146,6 +146,13 @@ _Avoid_: comentario, apunte
 Conjunto de estados y notas del banco, con export/import propio versionado y
 validado. Vive en una clave de localStorage separada del tema del CV.
 _Avoid_: datos guardados, backup
+
+**Colección de práctica**:
+Lista curada de ejercicios de práctica para `/interview`: items con nota de ejercicio y
+ids del banco. La genérica vive en `src/content/collections/` y viaja al público; la
+personal (que puede nombrar empresas reales) vive en la carpeta de su oferta y no viaja.
+La práctica usa el progreso por pregunta: la colección no tiene marcas propias.
+_Avoid_: playlist, set de preguntas, plan de repaso (es por oferta, ADR-0035)
 
 ### Perfil, plan y producto genérico
 

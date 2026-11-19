@@ -165,7 +165,13 @@ export const interviewUiStateSchema = z.object({
   sort: interviewSortSchema,
   randomSeed: z.int().min(0),
   selectedId: z.string().min(1).nullable(),
-  onlyReview: z.boolean()
+  onlyReview: z.boolean(),
+  /**
+   * Coleccion de practica activa (Fase J), opcional y aditiva: los estados
+   * guardados antes del campo siguen parseando y arrancan sin coleccion. El
+   * slug se valida contra las colecciones vigentes al usarse.
+   */
+  collectionSlug: z.string().min(1).nullable().optional()
 });
 
 export type LocalizedText = z.infer<typeof localizedTextSchema>;

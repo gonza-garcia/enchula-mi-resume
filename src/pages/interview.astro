@@ -6,6 +6,7 @@ import InterviewPrep from '../islands/interview-prep/InterviewPrep';
 import { loadProfile, nameInitials } from '../lib/profile';
 import { loadLearningPlan } from '../lib/learning-plan';
 import { assertReviewPlanQuestionIds, loadReviewPlans } from '../lib/interview-review-plan';
+import { assertCollectionQuestionIds, loadCollections } from '../lib/interview-collection';
 import { renderAnswerMarkdown, renderCodeShell, renderInlineMarkdown } from '../lib/interview-markdown';
 import {
   interviewQuestionBankSchema,
@@ -139,6 +140,9 @@ for (const bank of parsedBanks) {
 // Planes de repaso por oferta (ADR-0035): se validan en build contra el banco.
 assertReviewPlanQuestionIds(loadReviewPlans(), bankQuestionIds);
 
+// Colecciones de practica (Fase J): misma validacion cruzada con el banco.
+assertCollectionQuestionIds(loadCollections(), bankQuestionIds);
+
 function hasFences(markdown: string): boolean {
   return markdown.includes('```');
 }
@@ -224,6 +228,7 @@ const sources = Array.from(
     sources={sources}
     planLinks={planLinks}
     reviewPlans={loadReviewPlans()}
+    collections={loadCollections()}
   />
 
   <style is:global>
@@ -1095,6 +1100,36 @@ const sources = Array.from(
     .review-gaps ul { margin: 8px 0 0; padding-left: 18px; }
     .review-gaps li { margin-bottom: 4px; font-size: 0.9rem; }
     .review-gaps-note { margin: 8px 0 0; color: var(--iv-muted); font-size: 0.85rem; }
+
+    /* Colecciones de practica (Fase J): lista en el sidebar y panel tipo repaso
+       sin marcas propias (la practica usa el progreso por pregunta). */
+    .collection-list { display: grid; gap: 6px; }
+    .collection-choice {
+      background: #fffefa;
+      border: 1px solid var(--iv-line);
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 700;
+      line-height: 1.25;
+      padding: 8px 10px;
+      text-align: left;
+      width: 100%;
+    }
+    .collection-choice:hover { border-color: var(--iv-ink); }
+    .collection-choice.active { background: var(--iv-ink); border-color: var(--iv-ink); color: #fff; }
+    .collection-item-progress { margin: 2px 0 0; color: var(--iv-muted); font-size: 0.78rem; }
+    .collection-chip { align-items: center; display: flex; gap: 7px; }
+    .collection-chip > .collection-chip-copy {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .chip-status { border-radius: 50%; flex: none; height: 8px; width: 8px; }
+    .chip-status-sin-marcar { background: var(--iv-line); }
+    .chip-status-se { background: #4e8d5b; }
+    .chip-status-repasar { background: #c9791b; }
 
     @media (prefers-reduced-motion: reduce) {
       .interview-app * { scroll-behavior: auto !important; transition: none !important; }

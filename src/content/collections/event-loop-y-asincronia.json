@@ -1,0 +1,51 @@
+{
+  "slug": "event-loop-y-asincronia",
+  "title": {
+    "en": "Event loop and async JavaScript",
+    "es": "Event loop y asincronía en JavaScript"
+  },
+  "items": [
+    {
+      "id": "orden-del-event-loop",
+      "note": {
+        "en": "Output order: predict the result by hand before reading the answer",
+        "es": "Orden de salida: predecí el resultado a mano antes de mirar la respuesta"
+      },
+      "questionIds": [
+        "javascript-typescript-event-loop-model",
+        "javascript-typescript-microtasks-and-tasks",
+        "dsa-frontend-microtask-ordering"
+      ]
+    },
+    {
+      "id": "promesas-y-async-await",
+      "note": {
+        "en": "Combinators and semantics: write the code from the prompt without autocomplete",
+        "es": "Combinadores y semántica: escribí el código desde la consigna sin autocompletado"
+      },
+      "questionIds": [
+        "javascript-typescript-promise-combinators",
+        "javascript-typescript-async-await-semantics"
+      ]
+    },
+    {
+      "id": "navegador-vs-node",
+      "note": {
+        "en": "Browser vs Node: compare each runtime's queues out loud",
+        "es": "Navegador vs Node: compará en voz alta las colas de cada runtime"
+      },
+      "questionIds": ["javascript-typescript-node-event-loop-differences"]
+    },
+    {
+      "id": "debounce-y-cancelacion",
+      "note": {
+        "en": "Live syntax practice: code a debounce from memory and cancel the in-flight fetch",
+        "es": "Práctica de sintaxis en vivo: implementá un debounce a memoria y cancelá el fetch en vuelo"
+      },
+      "questionIds": [
+        "dsa-frontend-debounce-throttle",
+        "browser-web-apis-fetch-cancellation"
+      ]
+    }
+  ]
+}

@@ -250,6 +250,20 @@ decisión vigente de este README tienen prioridad sobre el texto histórico de u
 - El estado del repaso vive en `interview-review` (`activeSlug` + marcas por tema) y nunca
   pisa `interview-progress`.
 
+### Colecciones de práctica (ADR-0047)
+
+- Listas curadas de ejercicios de práctica: `slug`, título bilingüe e items con su nota de
+  ejercicio y sus ids completos del banco. Validado en build con Zod y contra el banco: un
+  id desconocido rompe el build nombrándolo.
+- Ubicación por privacidad: lo genérico vive en `src/content/collections/<slug>.json` (el
+  nombre del archivo es el slug) y viaja al repo público; lo personal, que puede nombrar
+  empresas reales, vive en `docs/job-offers/<slug>/collection.json` y ni viaja al público
+  ni entra a un build genérico (mismo filtro demo que las ofertas).
+- En `/interview`: sección «Colecciones» en el sidebar, listado filtrado a los ids de la
+  colección activa y panel con los ejercicios, sus notas y el progreso por pregunta (sin
+  marcas nuevas: usa `interview-progress`). Deep link `?coleccion=<slug>` y selección
+  persistida en `interview-ui-state`.
+
 ### Banco de entrevistas: expansión Fase C (ADR-0030)
 
 - Las preguntas nuevas solo entran con fuente primaria verificada (1-3 por pregunta);
@@ -346,6 +360,7 @@ están en `docs/deploy.md`.
 | 0044 | Vigente | Estados de la postulación a cuatro (`borrador · enviada · confirmada · descartada`) |
 | 0045 | Vigente | Retiro del puente de prompts: la app se opera con un agente corriendo las skills |
 | 0046 | Vigente | Contenido bilingüe markdown, curiosidades y taxonomía de 34 áreas |
+| 0047 | Vigente | Colecciones de práctica en `/interview` |
 
 Los ADRs personales (decisiones del CV y hosting de las apps personales) están en
 el repo privado de planning y son legado suyo. Los ADRs históricos se conservan como
@@ -795,3 +810,14 @@ contexto y no contradecir las decisiones vigentes de este README.
   diseño). La skill `build-interview-review-plan` suma la regla de «práctica de sintaxis en
   vivo» para los planes de repaso. Fixes: `FENCE_PATTERN` renderiza captions con backticks
   (32 bloques afectados), y la coherencia del snippet del PKCE con sus pasos.
+- 19 nov 2026 (Fase J): **colecciones de práctica en `/interview`** (ADR-0047). Listas
+  curadas de ejercicios (`slug`, título bilingüe e items con nota de ejercicio y ids
+  completos del banco, validados en build contra el banco) con ubicación por privacidad:
+  lo genérico vive en `src/content/collections/<slug>.json` y viaja al público, y lo
+  personal —el material de una entrevista técnica real, que nombra empresas— vive en la
+  carpeta de su oferta y ni viaja ni entra a un build genérico. En `/interview`: sección
+  «Colecciones» en el sidebar, listado filtrado a los ids de la colección activa, panel
+  tipo repaso con ejercicios, notas y el progreso por pregunta existente (sin marcas
+  nuevas), y deep link `?coleccion=<slug>` con la selección persistida en
+  `interview-ui-state`. Viaja una colección genérica de ejemplo («Event loop y asincronía
+  en JavaScript»). Verificación en verde: 357 tests.
