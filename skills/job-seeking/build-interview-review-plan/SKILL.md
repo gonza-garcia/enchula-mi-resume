@@ -112,3 +112,11 @@ cubiertos y huecos del banco.
   se avisa al usuario.
 - **El progreso del usuario no vive acá.** Lo que se marca al practicar vive en
   `/interview` (`interview-review`), nunca en este archivo.
+- **Práctica de sintaxis en vivo.** Cuando un tema del plan exige escribir código de
+  memoria en la entrevista (debounce, generics con constraint, `defineProperty`, query
+  params, operadores de promesas, y otros del banco con esqueletos cortos), el `why` del
+  item lo dice explícitamente: practicar escribir la sintaxis sin mirar, no solo
+  reconocerla. Los ejercicios tipo "mirá este código" (¿qué imprime?, ¿dónde está el
+  bug?) que traiga el post-mortem de una entrevista previa se derivan al banco como
+  curiosidades antes de referenciarlos: el plan apunta al banco, nunca duplica su
+  contenido.

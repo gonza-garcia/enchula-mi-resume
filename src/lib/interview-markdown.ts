@@ -11,7 +11,7 @@ import type { RenderedCodeShell } from './interview-prep';
 
 // Convención de caption en el info string del fence:
 // ```js caption="Output: A, D, B, C"
-const FENCE_PATTERN = /```([^\n`]*)\r?\n([\s\S]*?)\r?\n```/g;
+const FENCE_PATTERN = /```([^\n]*?)\r?\n([\s\S]*?)\r?\n```/g;
 const CAPTION_PATTERN = /(?:^|\s)caption="([^"]*)"/;
 
 const SHIKI_LANGUAGE_ALIASES: Record<string, string> = {
