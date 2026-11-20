@@ -68,25 +68,25 @@ const ALL_AREAS = [
 
 // Conteo por área tras el corte por topic de la taxonomía aprobada.
 const EXPECTED_COUNTS: Record<string, number> = {
-  javascript: 23,
-  typescript: 19,
-  html: 7,
-  css: 8,
-  accesibilidad: 8,
-  react: 27,
-  'frameworks-ssr': 11,
-  seguridad: 8,
-  auth: 9,
-  backend: 7,
-  'bases-de-datos': 13,
-  'mobile-web': 5,
-  'react-native': 6,
-  'http-y-tiempo-real': 7,
-  'diseno-de-apis': 11,
-  git: 3,
-  'ci-cd-y-cloud': 10,
-  'estado-en-la-ui': 18,
-  'data-fetching': 10
+  javascript: 28,
+  typescript: 25,
+  html: 11,
+  css: 13,
+  accesibilidad: 12,
+  react: 33,
+  'frameworks-ssr': 18,
+  seguridad: 10,
+  auth: 11,
+  backend: 10,
+  'bases-de-datos': 16,
+  'mobile-web': 8,
+  'react-native': 10,
+  'http-y-tiempo-real': 10,
+  'diseno-de-apis': 14,
+  git: 6,
+  'ci-cd-y-cloud': 13,
+  'estado-en-la-ui': 21,
+  'data-fetching': 14
 };
 
 test.describe('Banco reorganizado por fases del plan (ADR-0030) y taxonomía 34 (ADR-0046)', () => {

@@ -18,7 +18,7 @@ test.describe('Interview prep page /interview/', () => {
     await page.goto('/interview/');
     await waitHydrated(page);
     await expect(page.getByRole('heading', { name: 'Prep entrevistas' })).toBeVisible();
-    await expect(page.locator('.question-card')).toHaveCount(405);
+    await expect(page.locator('.question-card')).toHaveCount(533);
     await expect(page.locator('.detail-panel')).toBeVisible();
     // La respuesta se muestra siempre: no hay toggle que abra ni cierre nada.
     await expect(page.locator('.answer-panel')).toBeVisible();
@@ -33,7 +33,7 @@ test.describe('Interview prep page /interview/', () => {
     await expect(page.locator('.question-card')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'No encontramos preguntas con esos filtros.' })).toBeVisible();
     await page.getByRole('checkbox', { name: 'Agentes y MCP' }).check();
-    await expect(page.locator('.question-card')).toHaveCount(13);
+    await expect(page.locator('.question-card')).toHaveCount(16);
   });
 
   test('global search opens with Ctrl+K, ranks results and jumps with its actions', async ({ page }) => {
@@ -91,9 +91,9 @@ test.describe('Interview prep page /interview/', () => {
     await expect(firstCard).not.toHaveText(beforeShuffle ?? '');
 
     await page.getByRole('checkbox', { name: 'Agentes y MCP' }).uncheck();
-    await expect(page.locator('.question-card')).toHaveCount(392);
+    await expect(page.locator('.question-card')).toHaveCount(517);
     await page.getByRole('checkbox', { name: 'Agentes y MCP' }).check();
-    await expect(page.locator('.question-card')).toHaveCount(405);
+    await expect(page.locator('.question-card')).toHaveCount(533);
 
     const secondCard = page.locator('.question-card').nth(1);
     const secondTitle = ((await secondCard.locator('.card-question').textContent()) ?? '').trim();
@@ -180,7 +180,7 @@ test.describe('Interview prep page /interview/', () => {
     await page.goto('/interview/');
     await waitHydrated(page);
     await page.getByRole('checkbox', { name: 'Agentes y MCP' }).uncheck();
-    await expect(page.locator('.question-card')).toHaveCount(392);
+    await expect(page.locator('.question-card')).toHaveCount(517);
     await page.getByRole('combobox', { name: 'Ordenar' }).selectOption('area');
     await page.locator('.question-card').nth(3).dispatchEvent('click');
     const selectedId = await page.locator('.detail-panel').getAttribute('data-question-id');
@@ -193,7 +193,7 @@ test.describe('Interview prep page /interview/', () => {
     await waitHydrated(page);
 
     await expect(page.getByRole('checkbox', { name: 'Agentes y MCP' })).not.toBeChecked();
-    await expect(page.locator('.question-card')).toHaveCount(392);
+    await expect(page.locator('.question-card')).toHaveCount(517);
     await expect(page.getByRole('combobox', { name: 'Ordenar' })).toHaveValue('area');
     await expect(page.locator('.detail-panel')).toHaveAttribute('data-question-id', selectedId ?? '');
     await expect(page.locator('.answer-panel')).toBeVisible();
@@ -225,7 +225,7 @@ test.describe('Interview prep page /interview/', () => {
     await waitHydrated(page);
 
     // El área que ya no existe se descarta y la válida se conserva (intersección).
-    await expect(page.locator('.question-card')).toHaveCount(13);
+    await expect(page.locator('.question-card')).toHaveCount(16);
     await expect(page.getByRole('combobox', { name: 'Ordenar' })).toHaveValue('frequency');
     const selectedId = await page.locator('.detail-panel').getAttribute('data-question-id');
     expect(selectedId).toBeTruthy();
@@ -239,12 +239,12 @@ test.describe('Interview prep page /interview/', () => {
     await expect(page.locator('.question-card')).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Limpiar', exact: true }).click();
-    await expect(page.locator('.question-card')).toHaveCount(405);
+    await expect(page.locator('.question-card')).toHaveCount(533);
     await expect(page.getByRole('searchbox', { name: 'Filtro de preguntas' })).toHaveValue('');
 
     await page.reload();
     await waitHydrated(page);
-    await expect(page.locator('.question-card')).toHaveCount(405);
+    await expect(page.locator('.question-card')).toHaveCount(533);
     await expect(page.getByRole('searchbox', { name: 'Filtro de preguntas' })).toHaveValue('');
   });
 

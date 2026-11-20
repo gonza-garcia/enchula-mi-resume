@@ -833,3 +833,36 @@ contexto y no contradecir las decisiones vigentes de este README.
   `queues` de la consistencia de punta a punta). Banco en **405 preguntas**. El resto del
   inventario de sugerencias queda con gatillo en el planning. Verificación en verde: 357
   tests.
+- 20 nov 2026 (Fase I, F3b general): **el resto del inventario de sugerencias: 128
+  preguntas nuevas cubriendo las 34 áreas del banco**. Una pregunta por sugerencia del
+  inventario del triage, investigada contra fuentes primarias (cada URL verificada
+  abriendo), con revisión pregunta por pregunta y 3 curiosidades por pregunta (384
+  nuevas). La única sugerencia no creada quedó descartada por duplicada: el rate limiting
+  por tenant ya lo cubre una pregunta existente de diseño de límites. Cobertura nueva por
+  familia: iterables, fugas de memoria y rechazos no manejados en JavaScript; tipos
+  condicionales, `infer`, overloads y branded types en TypeScript; portales, batching y
+  re-renders en React; caché, prerendering y Server Functions en frameworks SSR; modelo
+  de caja, unidades, stacking context y `display`/`visibility` en CSS; skip links,
+  contraste y árbol de accesibilidad; web components, ciclo de vida de la página, streams
+  e History API; third-party scripts, bundle, long tasks y TBT vs INP; decisión de store,
+  Context e hidratación; paginación, carreras de requests y caché en tiempo real; campos
+  de formulario accesibles, listas reordenableables, tooltips y formularios por pasos;
+  flatten, backoff con jitter, igualdad profunda y lookup maps; tipografía fluida, tokens
+  de movimiento y accesibilidad, adopción de design systems; fake timers, builders de
+  datos y snapshots; tablas con servidor, subidas reanudables, UI con permisos y
+  dashboards con fallos parciales; versionado de paquetes, límites de import, BFF y
+  project references; webhooks salientes, despliegues sin cortar requests y jobs
+  diferidos; planes de ejecución, normalización y réplicas de lectura; inyección SQL,
+  clickjacking, MFA y flujos de reseteo; HTTP/2 y HTTP/3, SSE con `Last-Event-ID` y
+  operaciones largas; REST vs gRPC, PATCH y webhooks confiables para el consumidor; reset
+  vs revert, bisect y hotfixes; rollback con migración, migraciones en pipeline y Lambda
+  vs contenedores; viewport móvil, objetivos táctiles y teclado en pantalla; estilos,
+  navegación, animaciones y profiling en React Native; feedback crítico, requisitos
+  ambiguos, decisiones técnicas y motivación de cambio; logs vs métricas vs trazas,
+  percentiles y costo de la instrumentación; y el track de IA completo (diseño
+  multi-agente, servidor MCP, tracing de corridas, evaluación por trayectorias,
+  experimentos online, presupuesto de evals, sampling, alucinaciones, modelos de
+  razonamiento, chunking, query rewriting, índices vectoriales, streaming desde FastAPI,
+  async en Python y deploy inicial). Los drafts con las fuentes de cada pregunta viven en
+  el planning de la instancia. Banco en **533 preguntas**. Las curiosidades se escribieron
+  en mimo, con el mismo criterio ya aprobado. Verificación en verde: 357 tests.
