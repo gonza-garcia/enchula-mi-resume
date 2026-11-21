@@ -119,10 +119,12 @@ export const interviewScenarioSchema = z.object({
 // `quiz: { mcqs, scenarios }` y el área sale del nombre del archivo (ADR-0046). Las formas de mcq y scenario no cambian; los pisos del
 // conteo por archivo bajan a 1 porque el reparto por afinidad temática entre
 // áreas hijas deja quizzes menores que el cap histórico de 10-12 / 3-4.
+// Topes ampliados en el ADR-0048 (24 / 8): la F3b general agregó 128 preguntas
+// y los quizzes derivan items de ellas sin reemplazar los existentes.
 export const interviewQuizFileSchema = z.object({
   quiz: z.object({
-    mcqs: z.array(interviewMcqSchema).min(1).max(12),
-    scenarios: z.array(interviewScenarioSchema).min(1).max(4)
+    mcqs: z.array(interviewMcqSchema).min(1).max(24),
+    scenarios: z.array(interviewScenarioSchema).min(1).max(8)
   })
 });
 

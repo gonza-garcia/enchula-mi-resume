@@ -834,7 +834,8 @@ contexto y no contradecir las decisiones vigentes de este README.
   inventario de sugerencias queda con gatillo en el planning. Verificación en verde: 357
   tests.
 - 20 nov 2026 (Fase I, F3b general): **el resto del inventario de sugerencias: 128
-  preguntas nuevas cubriendo las 34 áreas del banco**. Una pregunta por sugerencia del
+  preguntas nuevas cubriendo las 34 áreas del banco**.
+  Una pregunta por sugerencia del
   inventario del triage, investigada contra fuentes primarias (cada URL verificada
   abriendo), con revisión pregunta por pregunta y 3 curiosidades por pregunta (384
   nuevas). La única sugerencia no creada quedó descartada por duplicada: el rate limiting
@@ -866,3 +867,19 @@ contexto y no contradecir las decisiones vigentes de este README.
   async en Python y deploy inicial). Los drafts con las fuentes de cada pregunta viven en
   el planning de la instancia. Banco en **533 preguntas**. Las curiosidades se escribieron
   en mimo, con el mismo criterio ya aprobado. Verificación en verde: 357 tests.
+- 21 nov 2026 (Fase I, quizzes de la F3b general): **quizzes derivados de las 128
+  preguntas nuevas: 128 MCQs y 43 escenarios de código en las 34 áreas**, uno por
+  pregunta nueva más un escenario por tema propicio a código. Cada MCQ tiene 4
+  opciones con distractores que son malentendidos típicos y una explicación que
+  justifica la correcta y desarma el distractor más fuerte; los escenarios piden
+  predecir la salida, encontrar el bug y refactorizar, con rubric de 3–5 señales.
+  Se preserva todo el material de quiz existente: los items nuevos se anexan sin
+  reemplazar nada. Dos ajustes de contrato detrás: los **topes de quiz por área se
+  ampliaron** (24 MCQs y 8 escenarios, ADR-0048) porque cuatro áreas estaban ya en el
+  tope histórico, y la numeración de ids de quiz quedó como **secuencia única global
+  por familia de prefijo** (las familias se comparten entre áreas hermanas por el
+  histórico de los splits; se renumeraron solo los items nuevos y la auditoría global
+  cerró en cero duplicados). Hallazgo corregido en el banco: el esqueleto de
+  igualdad profunda de una pregunta de DSA rechazaba arrays iguales por contar la
+  `length` no enumerable — cambiado a claves enumerables y verificado ejecutándolo.
+  Verificación en verde: 357 tests.

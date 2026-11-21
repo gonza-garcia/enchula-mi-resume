@@ -136,7 +136,7 @@ test.describe('Interview prep page /interview/', () => {
     await expect(page.locator('.quiz-panel')).toBeVisible();
     const mcqCount = await page.locator('.mcq').count();
     expect(mcqCount).toBeGreaterThanOrEqual(10);
-    expect(mcqCount).toBeLessThanOrEqual(12);
+    expect(mcqCount).toBeLessThanOrEqual(24);
     await page.locator('.mcq input[type="radio"]').first().dispatchEvent('click');
     await expect(page.locator('.mcq-feedback').first()).toBeVisible();
     await page.locator('.scenario').first().locator('summary').dispatchEvent('click');
