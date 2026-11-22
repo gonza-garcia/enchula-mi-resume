@@ -883,3 +883,17 @@ contexto y no contradecir las decisiones vigentes de este README.
   igualdad profunda de una pregunta de DSA rechazaba arrays iguales por contar la
   `length` no enumerable — cambiado a claves enumerables y verificado ejecutándolo.
   Verificación en verde: 357 tests.
+- 22 nov 2026 (Fase I, pasada de calidad de quizzes): **los 354 items de quiz
+  preexistentes evaluados uno por uno contra el estándar de los nuevos: 265
+  reescritos y 89 mantenidos**, cada item con veredicto y motivo («no se reescribe
+  por reescribir»). Defectos más comunes encontrados y corregidos: opciones
+  correctas 2–3× más largas que los distractores —el «test tell» que permite
+  aprobar sin saber—, distractores de relleno que dejaban el item resoluble por
+  eliminación, explicaciones de una línea que no desarmaban al distractor más
+  fuerte, escenarios sin síntomas observables ni código de fix, y varios
+  modelAnswer que contradecían la premisa del código o erraban la semántica (un
+  span sin cerrar nunca se exporta; `--ours` en un rebase es la serie rebasada
+  hasta ahora, no el destino; una window en `WHERE` se rechaza, no se ignora; un
+  handler inline queda bloqueado bajo CSP con nonce). Los ids de los items no
+  cambian: solo se sustituye contenido, en posición. Verificación en verde: 357
+  tests.
