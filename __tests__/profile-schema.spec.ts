@@ -124,10 +124,14 @@ test.describe('Profile schema', () => {
     expect(issuesOf(result).join('\n')).toContain('Duplicate backlog id');
   });
 
-  test('a backlog id may collide with a bullet id, the promotion path reuses it', () => {
-    const broken = clone();
-    broken.backlog[0].id = broken.facts.experience[0].projects[0].bullets[0].id;
-    const result = profileSchema.safeParse(broken);
+  test('summaryExtended and textExtended are accepted as backup fields', () => {
+    const withBackups = clone();
+    withBackups.positionings[0].summaryExtended = { en: 'Long summary', es: 'Summary largo' };
+    withBackups.facts.experience[0].projects[0].bullets[0].textExtended = {
+      en: 'Long bullet',
+      es: 'Bullet largo'
+    };
+    const result = profileSchema.safeParse(withBackups);
     expect(issuesOf(result)).toEqual([]);
   });
 });

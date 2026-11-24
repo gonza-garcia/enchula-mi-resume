@@ -154,6 +154,9 @@ decisión vigente de este README tienen prioridad sobre el texto histórico de u
   su prueba y su techo (`proof` y `limits`), que no se renderizan mientras están en `reserve`.
   Se promueven a un CV adaptado por decisión de la persona usuaria, o al CV base
   materializándolos en hechos (ADR-0031).
+- Los posicionamientos y los bullets aceptan `summaryExtended` y `textExtended` opcionales:
+  la versión larga o anterior queda guardada en el perfil (la fuente única) y el CV
+  renderiza `summary` / `text`. Acortar un texto no borra la experiencia del banco.
 - El build carga el profile local si existe y cae al `profile.example.json` si no. El contenido
   demo es siempre ficticio (persona y empresas inventadas).
 - El plan de estudios es un contrato JSON propio con la demanda colgada de la skill y no del
@@ -925,3 +928,9 @@ contexto y no contradecir las decisiones vigentes de este README.
   y 139 escenarios (539 items). Fix de herramienta incluido: el merge de quizzes
   ya no toca el cierre de un array cuando el draft trae ese array vacío. La
   verificación corrió en la instancia (357 tests) y en el staging (294).
+- 24 nov 2026: **el contrato del perfil suma campos de respaldo**: `summaryExtended`
+  en el posicionamiento y `textExtended` en el bullet, ambos bilingües y opcionales.
+  La versión larga o anterior queda en el perfil (la fuente única) y el CV sigue
+  renderizando `summary` / `text`; acortar un texto ya no pierde la experiencia del
+  banco. Aditivo y compatible con los perfiles existentes. Verificación en verde:
+  357 tests.

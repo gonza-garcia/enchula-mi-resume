@@ -22,6 +22,12 @@ const contactSchema = z.object({
 const bulletSchema = z.object({
   id: idSchema,
   text: localizedTextSchema,
+  /**
+   * Version larga o anterior del bullet, conservada como respaldo en el perfil.
+   * El CV renderiza `text`; `textExtended` queda "en el banco" para no perder
+   * experiencia cuando se acorta el texto de una posicion.
+   */
+  textExtended: localizedTextSchema.optional(),
   skillIds: z.array(idSchema).optional()
 });
 
@@ -81,6 +87,12 @@ const positioningSchema = z.object({
   id: idSchema,
   title: localizedTextSchema,
   summary: localizedTextSchema,
+  /**
+   * Version larga o anterior del summary, conservada como respaldo en el perfil.
+   * El CV renderiza `summary`; `summaryExtended` guarda el texto completo que no
+   * entra en el scan de 6-10 segundos, sin perderlo.
+   */
+  summaryExtended: localizedTextSchema.optional(),
   skillIds: z.array(idSchema).min(1),
   bulletIds: z.array(idSchema).min(1)
 });
