@@ -1,0 +1,86 @@
+{
+  "slug": "huecos-frontend-senior",
+  "title": {
+    "en": "Senior frontend gaps",
+    "es": "Huecos de frontend senior"
+  },
+  "items": [
+    {
+      "id": "mutacion-clones-e-inmutabilidad",
+      "note": {
+        "en": "Mutation and immutability: aliasing, the clone menu and its losses, `defineProperty`, writing it from memory",
+        "es": "Mutación e inmutabilidad: aliasing, el menú de clones y sus pérdidas, `defineProperty`, escribilo de memoria"
+      },
+      "questionIds": [
+        "javascript-object-mutation-and-immutability",
+        "javascript-shallow-and-deep-copy",
+        "dsa-frontend-structured-clone"
+      ]
+    },
+    {
+      "id": "set-y-map",
+      "note": {
+        "en": "Set and Map: syntax, conversions, the serialization trap, Map as React state",
+        "es": "Set y Map: sintaxis, conversiones, la trampa de serialización, Map como estado de React"
+      },
+      "questionIds": [
+        "javascript-map-and-set-basics",
+        "dsa-frontend-map-set-deduplication",
+        "dsa-frontend-lookup-map-complexity"
+      ]
+    },
+    {
+      "id": "decorators-de-typescript",
+      "note": {
+        "en": "TypeScript decorators: legacy vs standard, where each runs, why not the daily React tool",
+        "es": "Decorators de TypeScript: legacy vs estándar, dónde corre cada uno, por qué no son el día a día en React"
+      },
+      "questionIds": ["typescript-decorators"]
+    },
+    {
+      "id": "clase-vs-funcion",
+      "note": {
+        "en": "Class vs function components with `this` as the axis; explain why the Rules of Hooks follow from function components",
+        "es": "Componentes de clase vs funcionales con el `this` como eje; explicá por qué las reglas de hooks se siguen de los funcionales"
+      },
+      "questionIds": [
+        "react-class-vs-function-components",
+        "react-frameworks-ui-rules-of-hooks"
+      ]
+    },
+    {
+      "id": "profiler-y-re-renders",
+      "note": {
+        "en": "React Profiler and wasted renders: record, read the flamegraph, distinguish an avoidable render",
+        "es": "React Profiler y re-renders: grabá, leé el flamegraph, distinguí un render evitable"
+      },
+      "questionIds": [
+        "react-profiler-wasted-renders",
+        "react-fix-unnecessary-re-render"
+      ]
+    },
+    {
+      "id": "principios-de-diseno",
+      "note": {
+        "en": "SOLID and DRY with frontend examples: name each letter and where DRY stops helping",
+        "es": "SOLID y DRY con ejemplos de frontend: nombrá cada letra y dónde DRY deja de ayudar"
+      },
+      "questionIds": [
+        "architecture-build-design-principles",
+        "architecture-build-code-organization-public-api"
+      ]
+    },
+    {
+      "id": "satisfies-as-const-y-utility-types",
+      "note": {
+        "en": "Type-level fluency: `satisfies` vs annotation, `as const`, and the utility types you write live",
+        "es": "Fluidez de tipos: `satisfies` vs anotación, `as const` y los utility types que escribís en vivo"
+      },
+      "questionIds": [
+        "typescript-satisfies-operator",
+        "typescript-literal-types-and-as-const",
+        "javascript-typescript-utility-types"
+      ]
+    }
+  ]
+}

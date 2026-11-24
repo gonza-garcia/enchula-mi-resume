@@ -263,6 +263,9 @@ decisión vigente de este README tienen prioridad sobre el texto histórico de u
   colección activa y panel con los ejercicios, sus notas y el progreso por pregunta (sin
   marcas nuevas: usa `interview-progress`). Deep link `?coleccion=<slug>` y selección
   persistida en `interview-ui-state`.
+- Colecciones genéricas vigentes: «Event loop y asincronía en JavaScript»
+  (`event-loop-y-asincronia`), «Huecos de frontend senior» (`huecos-frontend-senior`),
+  «AI track» (`ai-track`) y «El día a día de JS/TS» (`dia-a-dia-js-ts`).
 
 ### Banco de entrevistas: expansión Fase C (ADR-0030)
 
@@ -897,3 +900,24 @@ contexto y no contradecir las decisiones vigentes de este README.
   handler inline queda bloqueado bajo CSP con nonce). Los ids de los items no
   cambian: solo se sustituye contenido, en posición. Verificación en verde: 357
   tests.
+- 24 nov 2026: **tres colecciones de práctica genéricas nuevas** (ADR-0047):
+  «Huecos de frontend senior» (`huecos-frontend-senior`, 7 ejercicios/16 ids),
+  «AI track» (`ai-track`, 6/18) y «El día a día de JS/TS» (`dia-a-dia-js-ts`,
+  8/24), curadas con las preguntas nuevas de la F3b y validadas contra el banco
+  en build. Ninguna nombra empresas: viven en `src/content/collections/` y viajan
+  al repo público junto con la colección de event loop, que queda como cuarta
+  genérica (25 ejercicios/66 ids). La colección personal de una entrevista
+  concreta sigue al lado de su oferta y no viaja. Sin cambios de contrato ni de
+  UI: son datos que cargan en la sección «Colecciones» ya existente. Verificación
+  en verde: 357 tests en la instancia.
+- 24 nov 2026: **quiz del material de una entrevista técnica real** (E1–E11):
+  8 MCQs y 6 escenarios nuevos derivados de los ejercicios con `content-designer`,
+  revisados item por item antes del merge. Cubren orden del event loop y
+  microtasks, mutación/clones/inmutabilidad, `this` y call/apply/bind,
+  composición vs prop drilling, deferred vs debounce, combinadores de promesas,
+  Set/Map, decorators y union/intersection, Profiler y re-renders, clase vs
+  función, y SOLID/DRY con su límite. Se anexan sin reemplazar nada, con ids que
+  continúan la secuencia global por familia de prefijo; el quiz queda en 400 MCQs
+  y 139 escenarios (539 items). Fix de herramienta incluido: el merge de quizzes
+  ya no toca el cierre de un array cuando el draft trae ese array vacío. La
+  verificación corrió en la instancia (357 tests) y en el staging (294).

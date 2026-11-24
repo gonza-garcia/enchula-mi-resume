@@ -1,0 +1,81 @@
+{
+  "slug": "ai-track",
+  "title": {
+    "en": "AI track",
+    "es": "AI track"
+  },
+  "items": [
+    {
+      "id": "fundamentos-y-costo",
+      "note": {
+        "en": "What an LLM is, tokens and context, and how cost and latency shape the model choice",
+        "es": "Qué es un LLM, tokens y contexto, y cómo costo y latencia moldean la elección de modelo"
+      },
+      "questionIds": [
+        "ai-agents-what-is-an-llm",
+        "ai-agents-tokens-context-and-limits",
+        "llm-fundamentals-cost-and-latency-reasoning"
+      ]
+    },
+    {
+      "id": "rag-y-retrieval",
+      "note": {
+        "en": "RAG end to end: failure modes, chunking, hybrid search and reranking",
+        "es": "RAG de punta a punta: modos de falla, chunking, búsqueda híbrida y reranking"
+      },
+      "questionIds": [
+        "ai-agents-rag-pipeline-and-failure-modes",
+        "rag-retrieval-document-chunking-failure-modes",
+        "rag-retrieval-hybrid-search-and-reranking"
+      ]
+    },
+    {
+      "id": "agentes-y-function-calling",
+      "note": {
+        "en": "The agent loop, the function-calling round trip, and what MCP standardizes",
+        "es": "El loop del agente, el round trip de function calling y qué estandariza MCP"
+      },
+      "questionIds": [
+        "ai-agents-agent-loop-stop-conditions",
+        "ai-agents-function-calling-flow",
+        "ai-agents-mcp-architecture"
+      ]
+    },
+    {
+      "id": "seguridad-de-agentes",
+      "note": {
+        "en": "Prompt injection and the lethal trifecta: break the chain before trusting the tool",
+        "es": "Prompt injection y la trifecta letal: cortá la cadena antes de confiar en la herramienta"
+      },
+      "questionIds": [
+        "agents-mcp-lethal-trifecta",
+        "agents-mcp-tool-safety-and-exfiltration",
+        "ai-agents-prompt-injection-defense"
+      ]
+    },
+    {
+      "id": "evals",
+      "note": {
+        "en": "Evals that survive production: error analysis on traces, an honest dataset, regression gates",
+        "es": "Evals que sobreviven producción: análisis de errores sobre trazas, dataset honesto, gates de regresión"
+      },
+      "questionIds": [
+        "evals-production-error-analysis-100-traces",
+        "evals-production-building-eval-dataset",
+        "ai-agents-evals-and-regression-testing"
+      ]
+    },
+    {
+      "id": "servicio-en-produccion",
+      "note": {
+        "en": "Ship it: a minimal service around the model call, streaming, and latency as product UX",
+        "es": "Ponelo en producción: un servicio mínimo alrededor de la llamada al modelo, streaming y latencia como UX"
+      },
+      "questionIds": [
+        "python-backend-cloud-fastapi-llm-service",
+        "python-backend-cloud-stream-model-response",
+        "llm-fundamentals-latency-ux"
+      ]
+    }
+  ]
+}

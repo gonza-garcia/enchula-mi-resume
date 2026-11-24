@@ -1,0 +1,105 @@
+{
+  "slug": "dia-a-dia-js-ts",
+  "title": {
+    "en": "Everyday JS/TS",
+    "es": "El día a día de JS/TS"
+  },
+  "items": [
+    {
+      "id": "declaraciones-y-coercion",
+      "note": {
+        "en": "Declarations, hoisting and the TDZ, primitives vs objects, coercion: answer with the exact rule",
+        "es": "Declaraciones, hoisting y TDZ, primitivos vs objetos, coerción: respondé con la regla exacta"
+      },
+      "questionIds": [
+        "javascript-typescript-var-let-const",
+        "javascript-typescript-hoisting-and-tdz",
+        "javascript-typescript-primitives-and-coercion"
+      ]
+    },
+    {
+      "id": "closures",
+      "note": {
+        "en": "Closures and the loop trap: write the fix from memory",
+        "es": "Closures y la trampa del loop: escribí el arreglo de memoria"
+      },
+      "questionIds": [
+        "javascript-typescript-closures-and-lexical-scope",
+        "javascript-typescript-loop-closures"
+      ]
+    },
+    {
+      "id": "this-y-prototipos",
+      "note": {
+        "en": "`this` by call site, call/apply/bind syntax, and the prototype chain",
+        "es": "`this` según el call site, sintaxis de call/apply/bind y la cadena de prototipos"
+      },
+      "questionIds": [
+        "javascript-typescript-this-binding",
+        "javascript-typescript-call-apply-bind",
+        "javascript-typescript-prototype-chain"
+      ]
+    },
+    {
+      "id": "event-loop-y-async",
+      "note": {
+        "en": "Predict output order out loud: stack, microtasks, timers, and what `await` defers",
+        "es": "Predecí el orden en voz alta: stack, microtasks, timers y qué difiere `await`"
+      },
+      "questionIds": [
+        "javascript-typescript-event-loop-model",
+        "javascript-typescript-microtasks-and-tasks",
+        "javascript-typescript-async-await-semantics"
+      ]
+    },
+    {
+      "id": "promesas",
+      "note": {
+        "en": "Chaining, combinators, cancellation: pick the combinator by contract, not by habit",
+        "es": "Encadenado, combinadores, cancelación: elegí el combinador por contrato, no por costumbre"
+      },
+      "questionIds": [
+        "javascript-typescript-promise-chaining",
+        "javascript-typescript-promise-combinators",
+        "javascript-typescript-cancellation"
+      ]
+    },
+    {
+      "id": "arrays-y-colecciones",
+      "note": {
+        "en": "map/filter/reduce/forEach, Map and Set, iterables and generators",
+        "es": "map/filter/reduce/forEach, Map y Set, iterables y generadores"
+      },
+      "questionIds": [
+        "javascript-array-methods-map-filter-reduce",
+        "javascript-map-and-set-basics",
+        "javascript-iterables-and-generators"
+      ]
+    },
+    {
+      "id": "copias-y-mutacion",
+      "note": {
+        "en": "Shallow vs deep copy: say what each clone preserves and what it loses",
+        "es": "Copia superficial vs profunda: decí qué preserva cada clon y qué pierde"
+      },
+      "questionIds": [
+        "javascript-object-mutation-and-immutability",
+        "javascript-shallow-and-deep-copy"
+      ]
+    },
+    {
+      "id": "typescript-del-dia-a-dia",
+      "note": {
+        "en": "Type erasure, union vs intersection, generics, utility types, discriminated unions",
+        "es": "Erasure de tipos, unión vs intersección, genéricos, utility types, uniones discriminadas"
+      },
+      "questionIds": [
+        "javascript-typescript-type-erasure",
+        "javascript-typescript-union-intersection",
+        "javascript-typescript-generics-and-inference",
+        "javascript-typescript-utility-types",
+        "javascript-typescript-discriminated-unions"
+      ]
+    }
+  ]
+}
