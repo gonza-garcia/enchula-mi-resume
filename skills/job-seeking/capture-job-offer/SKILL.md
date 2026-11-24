@@ -193,6 +193,12 @@ Del texto y del link:
   (sección About, primer párrafo institucional). Opcional.
 - `oferta_texto`: el texto completo verbatim limpio.
 
+- **Agregadores**: si el input es un agregador (JobLeads, Jooble, etc.), el `url` del
+  frontmatter es el **posting original** en el ATS o careers page de la empresa, nunca el
+  link del agregador. El link del agregador va como `url_alternativa` (referencia) y la
+  fuente de descubrimiento puede ir en `fuente`. Si no se encuentra el original, no se
+  captura la ficha del agregador como oferta.
+
 Criterio de completado: los 10 campos base resueltos (algunos pueden ser null, el
 texto nunca) y `perfiles` resuelto o vacío.
 

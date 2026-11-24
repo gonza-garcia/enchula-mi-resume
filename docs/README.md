@@ -43,8 +43,9 @@ forma parte del producto.
   las skills del repo, que escriben los archivos y validan en build; la app lista y revisa
   exactamente lo que hay en disco (ADR-0045, que retiró el puente de prompts del ADR-0023).
 - Las skills del flujo viven en `skills/job-seeking/`: `build-profile`, `capture-job-offer`,
-  `adapt-resume-to-offer`, `research-content`, `content-designer`, `capture-learning-plan`,
-  `build-interview-review-plan` y `register-sweep`.
+  `adapt-resume-to-offer`, `research-content`, `research-company`, `content-designer`,
+  `capture-learning-plan`, `fill-application-form`, `build-interview-review-plan` y
+  `register-sweep`.
 - El pipeline de búsqueda tiene su contrato (ADR-0043): fuentes de cualquier tipo con su
   playbook de extracción (`docs/job-search/sources/`), barridos registrados con ids
   estables por vacante, estados y descartes con motivo (`docs/job-search/sweeps/`) y la

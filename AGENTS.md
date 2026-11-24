@@ -29,6 +29,14 @@ Las skills del flujo de trabajo viven en el repo, en `skills/job-seeking/`:
   cruzando los "Temas a repasar" de su `match-report.md` contra el banco de
   preguntas, y lo guarda como `docs/job-offers/<slug>/interview-review-plan.json`
   (ADR-0035), listo para que `/interview` lo cargue.
+- `research-company/SKILL.md`: investiga la empresa de una oferta capturada (qué
+  hace, origen, tamaño, facturación pública, cultura, reseñas y salario para el
+  rol desde Argentina) y escribe `company-research.md` en su carpeta.
+- `fill-application-form/SKILL.md`: completa el formulario del ATS original con
+  los datos del perfil, el CV adaptado y la cover letter usando browser-skill.
+  No crea cuentas, no paga, no resuelve CAPTCHAs y nunca aprieta Submit: entrega
+  el control a la persona usuaria y escribe `application.md` recién cuando esta
+  confirma que aplicó.
 - `register-sweep/SKILL.md`: registra un barrido del pipeline de búsqueda
   (`docs/job-search/sweeps/`, ADR-0043) con las fuentes barridas, las vacantes
   encontradas (id estable + estado) y los descartes con motivo, y actualiza el

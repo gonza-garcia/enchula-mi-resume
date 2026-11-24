@@ -115,6 +115,23 @@ se termina el trabajo y recién ahí se pregunta.
 (C4). El archivo no se escribe sin su OK, pero se pide cuando el CV adaptado ya
 está terminado, no al arrancar.
 
+## Pipeline de postulación
+
+Cuando la oferta se prepara para postular, además del match report y el CV adaptado:
+
+1. **Cover letter automática**: si no existe `cover-letter.md`, escribir un borrador
+   con la estructura C1-C3 sin esperar una pregunta. El borrador se muestra a la
+   persona usuaria para revisión antes de enviarlo; la aprobación sigue siendo
+   necesaria para considerarlo final. La persona usuaria pidió este
+   comportamiento para el pipeline de su instancia.
+2. **Investigación de empresa**: ejecutar `research-company` para dejar
+   `company-research.md` en la carpeta de la oferta (qué hace, origen, tamaño,
+   facturación pública, cultura, reseñas y salario para el rol desde Argentina).
+3. **Formulario**: ofrecer `fill-application-form` para completar el ATS original
+   con el CV adaptado y la cover letter, sin apretar Submit. La skill entrega el
+   control antes del envío y escribe `application.md` solo cuando la persona
+   usuaria confirma que aplicó.
+
 ## Modo de operación
 
 Un solo modo: el usuario pide analizar, adaptar o la cover letter, aplicás los
