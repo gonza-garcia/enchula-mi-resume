@@ -1061,8 +1061,8 @@ const sources = Array.from(
       cursor: pointer;
     }
     .review-exit:hover { background: var(--iv-paper); }
-    .review-items { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 12px; }
-    .review-item { border: 1px solid var(--iv-soft-line); border-radius: 10px; padding: 12px 14px; }
+    .review-items { list-style: none; margin: 16px 0 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .review-item { border: 1px solid var(--iv-soft-line); border-radius: 10px; padding: 12px 14px; min-width: 0; }
     .review-item.review-item-done { background: #f2f8e6; }
     .review-item-head { display: flex; gap: 10px; align-items: flex-start; }
     .review-item-order {

@@ -8,8 +8,8 @@
     {
       "id": "mutacion-clones-e-inmutabilidad",
       "note": {
-        "en": "Mutation and immutability: aliasing, the clone menu and its losses, `defineProperty`, writing it from memory",
-        "es": "Mutación e inmutabilidad: aliasing, el menú de clones y sus pérdidas, `defineProperty`, escribilo de memoria"
+        "en": "Mutation and immutability: aliasing, the clone menu and its losses, defineProperty, writing it from memory",
+        "es": "Mutación e inmutabilidad: aliasing, el menú de clones y sus pérdidas, defineProperty, escribilo de memoria"
       },
       "questionIds": [
         "javascript-object-mutation-and-immutability",
@@ -35,13 +35,15 @@
         "en": "TypeScript decorators: legacy vs standard, where each runs, why not the daily React tool",
         "es": "Decorators de TypeScript: legacy vs estándar, dónde corre cada uno, por qué no son el día a día en React"
       },
-      "questionIds": ["typescript-decorators"]
+      "questionIds": [
+        "typescript-decorators"
+      ]
     },
     {
       "id": "clase-vs-funcion",
       "note": {
-        "en": "Class vs function components with `this` as the axis; explain why the Rules of Hooks follow from function components",
-        "es": "Componentes de clase vs funcionales con el `this` como eje; explicá por qué las reglas de hooks se siguen de los funcionales"
+        "en": "Class vs function components with this as the axis; explain why the Rules of Hooks follow from function components",
+        "es": "Componentes de clase vs funcionales con el this como eje; explicá por qué las reglas de hooks se siguen de los funcionales"
       },
       "questionIds": [
         "react-class-vs-function-components",
@@ -73,8 +75,8 @@
     {
       "id": "satisfies-as-const-y-utility-types",
       "note": {
-        "en": "Type-level fluency: `satisfies` vs annotation, `as const`, and the utility types you write live",
-        "es": "Fluidez de tipos: `satisfies` vs anotación, `as const` y los utility types que escribís en vivo"
+        "en": "Type-level fluency: satisfies vs annotation, as const, and the utility types you write live",
+        "es": "Fluidez de tipos: satisfies vs anotación, as const y los utility types que escribís en vivo"
       },
       "questionIds": [
         "typescript-satisfies-operator",

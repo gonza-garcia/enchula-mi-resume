@@ -31,8 +31,8 @@
     {
       "id": "this-y-prototipos",
       "note": {
-        "en": "`this` by call site, call/apply/bind syntax, and the prototype chain",
-        "es": "`this` según el call site, sintaxis de call/apply/bind y la cadena de prototipos"
+        "en": "The this value by call site, call/apply/bind syntax, and the prototype chain",
+        "es": "this según el call site, sintaxis de call/apply/bind y la cadena de prototipos"
       },
       "questionIds": [
         "javascript-typescript-this-binding",
@@ -43,8 +43,8 @@
     {
       "id": "event-loop-y-async",
       "note": {
-        "en": "Predict output order out loud: stack, microtasks, timers, and what `await` defers",
-        "es": "Predecí el orden en voz alta: stack, microtasks, timers y qué difiere `await`"
+        "en": "Predict output order out loud: stack, microtasks, timers, and what await defers",
+        "es": "Predecí el orden en voz alta: stack, microtasks, timers y qué difiere await"
       },
       "questionIds": [
         "javascript-typescript-event-loop-model",
